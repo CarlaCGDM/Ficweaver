@@ -33,6 +33,7 @@ export const chronologyActions = (set: any, get: any) => ({
             type: "event",
             year: new Date().getFullYear(),
             title: "New Event",
+            description: "", // 🆕 Default empty
             tags: [],
             position: spawnPos,
             connectedTo: connectToNodeId || undefined,

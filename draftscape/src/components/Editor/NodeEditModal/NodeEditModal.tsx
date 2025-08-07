@@ -2,12 +2,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
 import { useImageStore } from "../../../context/imageStore/imageStore";
-import { EditorContent, useEditor } from "@tiptap/react";
+import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Save, X } from "lucide-react";
 import "./nodeEditModalStyles.css";
 import { NodeFormFields } from "./NodeFormFields";
 import type { NodeData } from "../../../context/storyStore/types";
+import Link from "@tiptap/extension-link";
+
 
 interface NodeEditModalProps {
   node: NodeData | null;
@@ -15,7 +17,7 @@ interface NodeEditModalProps {
 }
 
 export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
-  const updateNodeData = useStoryStore((s) => s.updateNodeData);
+  const updateNodeData = useStoryStore((s) => s.updateNodeData)!;
   const story = useStoryStore((s) => s.story);
   const { imageMap, setImage } = useImageStore();
 
@@ -43,12 +45,26 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
   const [eventYear, setEventYear] = useState("");
   const [eventMonth, setEventMonth] = useState("");
   const [eventDay, setEventDay] = useState("");
+  const [eventDescription, setEventDescription] = useState("");
+
 
   const textEditor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit,
+      Link.configure({
+        openOnClick: true,    // Clicking opens link in new tab
+        autolink: true,       // Auto-detect links as you type
+        linkOnPaste: true,    // Convert pasted URLs into links
+        HTMLAttributes: {
+          rel: "noopener noreferrer",
+          target: "_blank",
+        },
+      }),
+    ],
     content: "",
     editorProps: { attributes: { class: "rich-editor", spellCheck: "true" } },
   });
+
 
   useEffect(() => {
     if (!node) return;
@@ -58,10 +74,10 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
       setDescription(node.description || "");
     } else if (node.type === "text") {
       setSummary(node.summary || "");
-      if (textEditor) textEditor.commands.setContent(node.text || "");
+      if (textEditor) textEditor?.commands.setContent(node.text || "");
       setTags(node.tags || []);
     } else if (node.type === "annotation") {
-      if (textEditor) textEditor.commands.setContent(node.text || "");
+      if (textEditor) textEditor?.commands.setContent(node.text || "");
     } else if (node.type === "picture") {
       setPictureDescription(node.description || "");
       const storedImage = imageMap[node.id];
@@ -71,8 +87,11 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
       setEventMonth(node.month?.toString() ?? "");
       setEventDay(node.day?.toString() ?? "");
       setTitle(node.title || "");
+      setEventDescription(node.description || ""); // 🆕
       setTags(node.tags || []);
+      if (textEditor) textEditor?.commands.setContent(node.description || "");
     }
+
 
   }, [node, textEditor, imageMap]);
 
@@ -107,14 +126,16 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
     } else if (node.type === "picture") {
       updateNodeData(node.id, { description: pictureDescription });
     } else if (node.type === "event") {
-      updateNodeData(node.id, {
+      updateNodeData!(node.id, {
         year: parseInt(eventYear),
         month: eventMonth ? parseInt(eventMonth) : undefined,
         day: eventDay ? parseInt(eventDay) : undefined,
         title,
+        description: textEditor ? textEditor.getHTML() : "",
         tags,
       });
     }
+
 
     onClose();
   };
@@ -170,7 +191,7 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
             eventYear={eventYear} setEventYear={setEventYear}
             eventMonth={eventMonth} setEventMonth={setEventMonth}
             eventDay={eventDay} setEventDay={setEventDay}
-
+            eventDescription={eventDescription} setEventDescription={setEventDescription}
           />
         </div>
 

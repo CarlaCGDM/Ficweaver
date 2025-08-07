@@ -40,7 +40,7 @@ export default function CanvasNodes({
 
     const { startPos, nodeId } = mouseDownInfoRef.current;
     const distance = Math.hypot(e.clientX - startPos.x, e.clientY - startPos.y);
-    
+
     if (distance > 5) {
       console.log("🎯 Drag started for", nodeId);
       isDraggingRef.current = true;
@@ -56,7 +56,7 @@ export default function CanvasNodes({
     const { nodeId, startPos, timestamp } = mouseDownInfoRef.current;
     const distance = Math.hypot(e.clientX - startPos.x, e.clientY - startPos.y);
     const now = Date.now();
-    
+
     // Clean up
     mouseDownInfoRef.current = null;
     document.removeEventListener('mousemove', handleGlobalMouseMove);
@@ -65,7 +65,7 @@ export default function CanvasNodes({
     // If we didn't drag and it was a quick click, check for double-click
     if (!isDraggingRef.current && distance <= 5) {
       const timeSinceLastClick = now - lastClickTimeRef.current;
-      
+
       if (timeSinceLastClick < 300) { // Double-click window
         console.log("🔥 Double-click detected for", nodeId);
         onNodeDoubleClick(nodeId);
@@ -83,6 +83,15 @@ export default function CanvasNodes({
 
   const handleMouseDown = (e: React.MouseEvent, nodeId: string) => {
     if (e.button !== 0) return; // Only left mouse button
+
+    const target = e.target as HTMLElement;
+    const isInteractive = target.closest('a, button, input, textarea, select, [contenteditable]');
+
+    if (isInteractive) {
+      // Don't interfere with interactive elements at all
+      return;
+    }
+
     e.stopPropagation();
     e.preventDefault(); // Prevent text selection
 
@@ -119,8 +128,8 @@ export default function CanvasNodes({
             isDragging={draggingNodeId === ch.chapterNode.id}
             isInDragGroup={draggingGroup?.includes(ch.chapterNode.id) || false}
             onMouseDown={(e) => handleMouseDown(e, ch.chapterNode.id)}
-            onMouseUp={() => {}} // Handled by global listener
-            onDoubleClick={() => {}} // Handled by our logic
+            onMouseUp={() => { }} // Handled by global listener
+            onDoubleClick={() => { }} // Handled by our logic
             onEditNode={onEditNode}
             chapterIndex={chapterIndex}
             focusedNodeId={focusedNodeId}
@@ -137,8 +146,8 @@ export default function CanvasNodes({
                 isDragging={draggingNodeId === n.id}
                 isInDragGroup={draggingGroup?.includes(n.id) || false}
                 onMouseDown={(e) => handleMouseDown(e, n.id)}
-                onMouseUp={() => {}} // Handled by global listener
-                onDoubleClick={() => {}} // Handled by our logic
+                onMouseUp={() => { }} // Handled by global listener
+                onDoubleClick={() => { }} // Handled by our logic
                 onEditNode={onEditNode}
                 chapterIndex={chapterIndex}
                 sceneIndex={sceneIndex}

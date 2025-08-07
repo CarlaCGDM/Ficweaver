@@ -4,7 +4,6 @@ import { baseNodeStyle, headerStyle } from "./nodeStyles";
 import NodeActions from "./NodeActions";
 
 import { useStoryStore } from "../../../context/storyStore/storyStore";
-import { collectCanvasDragGroup } from "../../../context/storyStore/helpers"; // If needed for local adjustments
 
 export default function SceneNode({ ...props }: NodeProps & { focusedNodeId?: string }) {
   const { node, chapterColor, sceneColor, isDragging, isInDragGroup, onMouseDown, onEditNode, chapterIndex, sceneIndex, focusedNodeId } = props;

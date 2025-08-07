@@ -190,10 +190,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
         0
       );
 
-    const hasActiveSearch = searchPerformed;
-    const filteredChapters = hasActiveSearch
-      ? story.chapters.filter((ch) => searchResults.chapters.includes(ch.id))
-      : story.chapters;
+
 
     return (
       <div

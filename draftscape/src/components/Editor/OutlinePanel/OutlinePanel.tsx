@@ -109,9 +109,7 @@ export default function OutlinePanel({
     <div style={outlinePanelContainer}>
       {/* 🔒 Fixed Toolbar */}
       <OutlineToolbar
-        onNewStory={handleNewStory}
         onExport={handleExportZip}
-        onImport={handleImportZip}
       />
 
       {/* 🧾 Scrollable Content */}

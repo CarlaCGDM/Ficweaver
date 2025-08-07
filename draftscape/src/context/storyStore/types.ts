@@ -68,6 +68,7 @@ export interface EventNode extends BaseNode {
   month?: number;
   day?: number;
   title: string;     // Short non-rich description
+  description?: string;
   tags: string[];    // Freeform tags (characters, locations, etc.)
   connectedTo?: string;
 }

@@ -133,7 +133,7 @@ export const mediaActions = (set: any, get: any) => ({
     const newNode: AnnotationNode = {
       id: nanoid(),
       type: "annotation",
-      text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio.",
+      text: "New annotation.",
       position: spawnPos,
       connectedTo: connectToNodeId || undefined,
     };

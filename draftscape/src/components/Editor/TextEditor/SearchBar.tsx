@@ -96,7 +96,8 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     setQuery(val);
     setShowDropdown(val.startsWith("["));
     if (val.trim() === "" && chips.length === 0) {
-      onSearch({ chapters: [], textNodes: [], searchQuery: "" }, true);
+      onSearch({ chapters: [], textNodes: [], eventNodes: [], searchQuery: "" }, true);
+
     }
   };
 
@@ -116,7 +117,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
   const clearSearch = () => {
     setQuery("");
     setChips([]);
-    onSearch({ chapters: [], textNodes: [], searchQuery: "" }, true);
+    onSearch({ chapters: [], textNodes: [], eventNodes: [], searchQuery: "" }, true);
   };
 
   return (

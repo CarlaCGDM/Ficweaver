@@ -9,7 +9,7 @@ interface CanvasOverlayProps {
   onZoomOut: () => void;
 }
 
-export default function CanvasOverlay({ onResetView, onZoomIn, onZoomOut }: CanvasOverlayProps) {
+export default function CanvasOverlay({ onResetView: _onResetView, onZoomIn: _onZoomIn, onZoomOut: _onZoomOut }: CanvasOverlayProps) {
   const undo = useStoryStore((s) => s.undo);
   const redo = useStoryStore((s) => s.redo);
   const past = useStoryStore((s) => s.past ?? []);

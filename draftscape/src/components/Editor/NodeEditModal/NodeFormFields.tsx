@@ -1,33 +1,192 @@
-import { EditorContent } from "@tiptap/react";
+import { EditorContent, Editor } from "@tiptap/react";
 import NodeToolbar from "./NodeToolbar";
+import type { NodeData } from "../../../context/storyStore/types";
 
-export function NodeFormFields({ node, editor, ...formProps }) {
-  const {
-    title, setTitle,
-    description, setDescription,
-    summary, setSummary,
-    tags, tagQuery, setTagQuery,
-    showTagDropdown, setShowTagDropdown,
-    filteredTags, handleAddTag, handleRemoveTag,
-    handleTagKeyDown,
-    annotationText, setAnnotationText,
-    pictureDescription, setPictureDescription,
-    handleImageUpload, imagePreview,
-    eventYear, setEventYear,
-    eventMonth, setEventMonth,
-    eventDay, setEventDay
+interface NodeFormFieldsProps {
+  node: NodeData;
+  editor: Editor | null;
+  title: string;
+  setTitle: (val: string) => void;
+  description: string;
+  setDescription: (val: string) => void;
+  summary: string;
+  setSummary: (val: string) => void;
+  tags: string[];
+  tagQuery: string;
+  setTagQuery: (val: string) => void;
+  showTagDropdown: boolean;
+  setShowTagDropdown: (val: boolean) => void;
+  filteredTags: string[];
+  handleAddTag: (tag: string) => void;
+  handleRemoveTag: (tag: string) => void;
+  handleTagKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  annotationText: string;
+  setAnnotationText: (val: string) => void;
+  pictureDescription: string;
+  setPictureDescription: (val: string) => void;
+  handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  imagePreview: string | null;
+  eventYear: string;
+  setEventYear: (val: string) => void;
+  eventMonth: string;
+  setEventMonth: (val: string) => void;
+  eventDay: string;
+  setEventDay: (val: string) => void;
+  eventDescription: string;
+  setEventDescription: (val: string) => void;
+}
 
-  } = formProps;
+const formGroupStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "4px",
+  marginBottom: "12px",
+};
 
-  console.log(node.type)
+const labelStyle: React.CSSProperties = {
+  fontWeight: 500,
+  fontSize: "13px",
+  color: "#444",
+};
 
+const inputStyle: React.CSSProperties = {
+  padding: "6px 8px",
+  borderRadius: "6px",
+  border: "1px solid #ccc",
+  fontSize: "13px",
+  outline: "none",
+  transition: "border 0.2s, box-shadow 0.2s",
+} as const;
+
+const chipStyle: React.CSSProperties = {
+  background: "#eee",
+  padding: "2px 6px",
+  borderRadius: "12px",
+  fontSize: "12px",
+  display: "flex",
+  alignItems: "center",
+  gap: "4px",
+};
+
+export function NodeFormFields({
+  node,
+  editor,
+  title,
+  setTitle,
+  description,
+  setDescription,
+  summary,
+  setSummary,
+  tags,
+  tagQuery,
+  setTagQuery,
+  showTagDropdown,
+  setShowTagDropdown,
+  filteredTags,
+  handleAddTag,
+  handleRemoveTag,
+  handleTagKeyDown,
+  annotationText: _annotationText,
+  setAnnotationText: _setAnnotationText,
+  pictureDescription,
+  setPictureDescription,
+  handleImageUpload,
+  imagePreview,
+  eventYear,
+  setEventYear,
+  eventMonth,
+  setEventMonth,
+  eventDay,
+  setEventDay,
+  eventDescription,
+  setEventDescription,
+}: NodeFormFieldsProps) {
+  const renderTagInput = () => (
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "6px" }}>
+        {tags.map((tag: string) => (
+          <span key={tag} style={chipStyle}>
+            {tag}
+            <button
+              type="button"
+              onClick={() => handleRemoveTag(tag)}
+              style={{
+                background: "none",
+                border: "none",
+                fontSize: "12px",
+                cursor: "pointer",
+              }}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+      </div>
+      <input
+        type="text"
+        style={inputStyle}
+        value={tagQuery}
+        onChange={(e) => {
+          setTagQuery(e.target.value);
+          setShowTagDropdown(true);
+        }}
+        onKeyDown={handleTagKeyDown}
+        placeholder="[tag]"
+      />
+      {showTagDropdown && filteredTags.length > 0 && (
+        <ul
+          style={{
+            listStyle: "none",
+            padding: "4px",
+            marginTop: "4px",
+            border: "1px solid #ccc",
+            background: "#fff",
+            borderRadius: "6px",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+          }}
+        >
+          {filteredTags.map((tag: string) => (
+            <li
+              key={tag}
+              onClick={() => handleAddTag(tag)}
+              style={{
+                padding: "4px 6px",
+                cursor: "pointer",
+                borderBottom: "1px solid #eee",
+              }}
+            >
+              {tag}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+
+  const renderEditor = () =>
+    editor && (
+      <div style={{ border: "1px solid #ccc", borderRadius: "6px", padding: "4px" }}>
+        <NodeToolbar editor={editor} />
+        <EditorContent editor={editor} />
+      </div>
+    );
+
+  // --- Form layouts per node type ---
   if (node.type === "chapter" || node.type === "scene") {
     return (
       <>
-        <label>Title</label>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} />
-        <label>Description</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} />
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>Title</label>
+          <input style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} />
+        </div>
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>Description</label>
+          <textarea
+            style={{ ...inputStyle, minHeight: "80px" }}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
       </>
     );
   }
@@ -35,107 +194,51 @@ export function NodeFormFields({ node, editor, ...formProps }) {
   if (node.type === "text") {
     return (
       <>
-        <label>Summary</label>
-        <input value={summary} onChange={(e) => setSummary(e.target.value)} />
-
-        <label>Tags</label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              style={{
-                background: "#ccc",
-                padding: "2px 6px",
-                borderRadius: "4px",
-                fontSize: "12px",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-            >
-              {tag}
-              <button
-                type="button"
-                onClick={() => handleRemoveTag(tag)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                }}
-              >
-                ×
-              </button>
-            </span>
-          ))}
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>Summary</label>
+          <input style={inputStyle} value={summary} onChange={(e) => setSummary(e.target.value)} />
         </div>
 
-        <input
-          type="text"
-          value={tagQuery}
-          onChange={(e) => {
-            setTagQuery(e.target.value);
-            setShowTagDropdown(true); // ✅ Force dropdown to appear while typing
-          }}
-          onKeyDown={handleTagKeyDown}
-          placeholder="[tag]"
-        />
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>Tags</label>
+          {renderTagInput()}
+        </div>
 
-        {showTagDropdown && filteredTags.length > 0 && (
-          <ul
-            style={{
-              listStyle: "none",
-              padding: "4px",
-              marginTop: "4px",
-              border: "1px solid #ccc",
-              background: "#f5f5f5",
-            }}
-          >
-            {filteredTags.map((tag) => (
-              <li
-                key={tag}
-                onClick={() => handleAddTag(tag)}
-                style={{
-                  padding: "4px 6px",
-                  cursor: "pointer",
-                  borderBottom: "1px solid #ddd",
-                }}
-              >
-                {tag}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <label>Body Text (Rich Text)</label>
-        {editor && <NodeToolbar editor={editor} />}
-        <EditorContent editor={editor} />
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>Body Text (Rich Text)</label>
+          {renderEditor()}
+        </div>
       </>
     );
   }
-
 
   if (node.type === "annotation") {
     return (
-      <>
-        <label>Annotation</label>
-        {editor && <NodeToolbar editor={editor} />}
-        <EditorContent editor={editor} />
-      </>
+      <div style={formGroupStyle}>
+        <label style={labelStyle}>Annotation</label>
+        {renderEditor()}
+      </div>
     );
   }
-
 
   if (node.type === "picture") {
     return (
       <>
-        <label>Picture Description</label>
-        <input value={pictureDescription} onChange={(e) => setPictureDescription(e.target.value)} />
-        <label>Upload Image</label>
-        <input type="file" accept="image/*" onChange={handleImageUpload} />
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>Picture Description</label>
+          <input
+            style={inputStyle}
+            value={pictureDescription}
+            onChange={(e) => setPictureDescription(e.target.value)}
+          />
+        </div>
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>Upload Image</label>
+          <input type="file" accept="image/*" onChange={handleImageUpload} />
+        </div>
         {imagePreview && (
-          <div className="image-preview">
-            <img src={imagePreview} alt="Preview" />
+          <div className="image-preview" style={{ marginTop: "8px" }}>
+            <img src={imagePreview} alt="Preview" style={{ maxWidth: "100%" }} />
           </div>
         )}
       </>
@@ -145,107 +248,180 @@ export function NodeFormFields({ node, editor, ...formProps }) {
   if (node.type === "event") {
     return (
       <>
-        <label>Year*</label>
-        <input
-          type="number"
-          value={eventYear}
-          onChange={(e) => setEventYear(e.target.value)}
-          required
-        />
-
-        <label>Month</label>
-        <input
-          type="number"
-          value={eventMonth}
-          onChange={(e) => setEventMonth(e.target.value)}
-          min={1}
-          max={12}
-        />
-
-        <label>Day</label>
-        <input
-          type="number"
-          value={eventDay}
-          onChange={(e) => setEventDay(e.target.value)}
-          min={1}
-          max={31}
-        />
-
-        <label>Event Title</label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-
-        <label>Tags</label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              style={{
-                background: "#ccc",
-                padding: "2px 6px",
-                borderRadius: "4px",
-                fontSize: "12px",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-            >
-              {tag}
-              <button
-                type="button"
-                onClick={() => handleRemoveTag(tag)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                }}
-              >
-                ×
-              </button>
-            </span>
-          ))}
+        {/* Event Title */}
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>Event Title</label>
+          <input style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
 
-        <input
-          type="text"
-          value={tagQuery}
-          onChange={(e) => {
-            setTagQuery(e.target.value);
-            setShowTagDropdown(true); // ✅ Force dropdown to appear while typing
-          }}
-          onKeyDown={handleTagKeyDown}
-          placeholder="[tag]"
-        />
+        {/* Date Row */}
+        <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            <label style={{ marginBottom: "4px", fontSize: "12px", fontWeight: 500 }}>Year*</label>
+            <input
+              type="number"
+              style={{
+                padding: "6px 8px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                fontSize: "14px",
+              }}
+              value={eventYear}
+              onChange={(e) => setEventYear(e.target.value)}
+              required
+            />
+          </div>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            <label style={{ marginBottom: "4px", fontSize: "12px", fontWeight: 500 }}>Month</label>
+            <input
+              type="number"
+              style={{
+                padding: "6px 8px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                fontSize: "14px",
+              }}
+              value={eventMonth}
+              onChange={(e) => setEventMonth(e.target.value)}
+              min={1}
+              max={12}
+            />
+          </div>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            <label style={{ marginBottom: "4px", fontSize: "12px", fontWeight: 500 }}>Day</label>
+            <input
+              type="number"
+              style={{
+                padding: "6px 8px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                fontSize: "14px",
+              }}
+              value={eventDay}
+              onChange={(e) => setEventDay(e.target.value)}
+              min={1}
+              max={31}
+            />
+          </div>
+        </div>
 
-        {showTagDropdown && filteredTags.length > 0 && (
-          <ul
+        {/* Tags Section */}
+        <div style={{ marginBottom: "12px", position: "relative" }}>
+          <label style={{ display: "block", marginBottom: "4px", fontWeight: 500 }}>
+            Tags
+          </label>
+
+          <div
             style={{
-              listStyle: "none",
-              padding: "4px",
-              marginTop: "4px",
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
               border: "1px solid #ccc",
-              background: "#f5f5f5",
+              borderRadius: "6px",
+              padding: "4px",
+              background: "#fff",
             }}
           >
-            {filteredTags.map((tag) => (
-              <li
+            {tags.map((tag) => (
+              <span
                 key={tag}
-                onClick={() => handleAddTag(tag)}
                 style={{
-                  padding: "4px 6px",
-                  cursor: "pointer",
-                  borderBottom: "1px solid #ddd",
+                  background: "#f2f2f2",
+                  padding: "2px 6px",
+                  marginRight: "4px",
+                  borderRadius: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  fontSize: "13px",
                 }}
               >
-                {tag}
-              </li>
+                [{tag}]
+                <button
+                  onClick={() => handleRemoveTag(tag)}
+                  style={{
+                    marginLeft: "4px",
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    padding: 0,
+                  }}
+                >
+                  ×
+                </button>
+              </span>
             ))}
-          </ul>
-        )}
+
+            <input
+              value={tagQuery}
+              onChange={(e) => {
+                setTagQuery(e.target.value);
+                setShowTagDropdown(true);
+              }}
+              onKeyDown={handleTagKeyDown}
+              placeholder="[tag]"
+              style={{
+                border: "none",
+                outline: "none",
+                flex: 1,
+                fontSize: "14px",
+                background: "transparent",
+                minWidth: "80px",
+              }}
+            />
+          </div>
+
+          {/* Floating Dropdown */}
+          {showTagDropdown && filteredTags.length > 0 && (
+            <div
+              style={{
+                position: "absolute",
+                top: "calc(100% + 4px)",
+                left: "0",
+                background: "#fff",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                zIndex: 10,
+                width: "200px",
+                maxHeight: "150px",
+                overflowY: "auto",
+              }}
+            >
+              {filteredTags.map((tag) => (
+                <div
+                  key={tag}
+                  onClick={() => {
+                    handleAddTag(tag);
+                  }}
+                  style={{
+                    padding: "6px 8px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    transition: "background 0.2s",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "#f9f9f9")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
+                >
+                  {tag}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+
+        {/* Event Description */}
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>Event Description</label>
+          {renderEditor()}
+        </div>
+
       </>
     );
   }

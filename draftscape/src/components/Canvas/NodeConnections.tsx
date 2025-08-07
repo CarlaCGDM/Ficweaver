@@ -1,4 +1,3 @@
-import React from "react";
 import type { Story, NodeData } from "../../context/storyStore/types";
 import { shadeColor } from "../../context/storyStore/colors"; // reuse our color utility
 

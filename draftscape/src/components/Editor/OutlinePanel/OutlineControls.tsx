@@ -102,7 +102,7 @@ export default function OutlineControls({
 
       <button
         disabled
-        style={{ ...buttonStyle, opacity: 0.8 }}
+        style={{ ...buttonStyle, opacity: 0.2, display: "none" }}
         onClick={() => setShowActionButtons((prev) => !prev)}
       >
         {showActionButtons ? "Hide Actions" : "Show Actions"}

@@ -65,7 +65,7 @@ export const shiftNodes = (story: Story, nodeIds: string[], offset: Position) =>
             if (n.type === "scene") {
               const sceneMedia = sc.nodes.filter(
                 (m) =>
-                  (m.type === "picture" || m.type === "annotation") &&
+                  (m.type === "picture" || m.type === "annotation" || m.type === "event") &&
                   m.connectedTo === n.id
               );
               sceneMedia.forEach((m) => {
@@ -80,7 +80,7 @@ export const shiftNodes = (story: Story, nodeIds: string[], offset: Position) =>
             if (n.type === "text") {
               const textMedia = sc.nodes.filter(
                 (m) =>
-                  (m.type === "picture" || m.type === "annotation") &&
+                  (m.type === "picture" || m.type === "annotation" || m.type === "event") &&
                   m.connectedTo === n.id
               );
               textMedia.forEach((m) => {

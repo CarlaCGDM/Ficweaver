@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo, useRef, useImperativeHandle, forwardRef }
 import { useStoryStore } from "../../../context/storyStore/storyStore";
 import type { Chapter, TextNode } from "../../../context/storyStore/types";
 import { editorContainer } from "./textEditorStyles";
-import ChapterBlock from "./ChapterBlock";
 import TextEditorHeader from "./TextEditorHeader";
 import SearchBar from "./SearchBar";
+import TextEditorContent from "./TextEditorContent";
 
 export interface TextEditorRef {
   scrollToNode: (nodeId: string) => void;
@@ -19,21 +19,15 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
   ({ onFocusNode, focusedNodeId }, ref) => {
     const story = useStoryStore((state) => state.story);
 
-    // ✅ Hover states
+    const [viewMode, setViewMode] = useState<"text" | "chronology">("text");
+
     const [hoveredId, setHoveredId] = useState<string | null>(null);
     const [hoveredSceneId, setHoveredSceneId] = useState<string | null>(null);
     const [hoveredChapterId, setHoveredChapterId] = useState<string | null>(null);
-    const [hoveredDetails, setHoveredDetails] = useState<{
-      sceneTitle?: string;
-      textSummary?: string;
-      tags?: string[];
-      wordCount?: number;
-    } | null>(null);
+    const [hoveredDetails, setHoveredDetails] = useState<any>(null);
 
-    // ✅ Scene focus tracking (only needed for chapter-level highlights)
     const [focusedSceneId, setFocusedSceneId] = useState<string | null>(null);
 
-    // ✅ When focus clears (e.g. X key pressed), reset immediately
     useEffect(() => {
       if (!focusedNodeId) {
         console.log("🔄 TextEditor: Clearing focus immediately");
@@ -41,73 +35,117 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
       }
     }, [focusedNodeId]);
 
-    // ✅ Search state
     const [searchResults, setSearchResults] = useState<{
       chapters: string[];
       textNodes: string[];
+      eventNodes: string[];
       searchQuery?: string;
-    }>({ chapters: [], textNodes: [], searchQuery: "" });
+    }>({ chapters: [], textNodes: [], eventNodes: [], searchQuery: "" });
+
     const [searchPerformed, setSearchPerformed] = useState(false);
 
-    // ✅ Refs
     const containerRef = useRef<HTMLDivElement>(null);
     const nodeRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-    // ✅ Scroll to node and update scene context
-    useImperativeHandle(ref, () => ({
-      scrollToNode(nodeId: string) {
-        console.log("🔍 scrollToNode called with:", nodeId);
+   useImperativeHandle(ref, () => ({
+  scrollToNode(nodeId: string) {
+    console.log("🔍 scrollToNode called with:", nodeId);
 
-        let targetNodeId: string | null = null;
+    let targetNodeId: string | null = null;
+    let targetType: "text" | "chapter" | "scene" | "event" | null = null;
+    let needsViewModeChange = false;
 
-        // TEXT NODE
-        const textNode = story.chapters
-          .flatMap((ch) => ch.scenes.flatMap((sc) => sc.nodes))
-          .find((n) => n.id === nodeId && n.type === "text");
-        if (textNode) {
-          targetNodeId = textNode.id;
-          const parentScene = story.chapters
-            .flatMap((ch) => ch.scenes)
-            .find((sc) => sc.nodes.some((n) => n.id === textNode.id));
-          setFocusedSceneId(parentScene?.id || null);
+    // Check for event nodes first since they have special view requirements
+    const eventHit = story.chapters
+      .flatMap(ch => ch.scenes.flatMap(sc => 
+        sc.nodes.filter(n => n.type === "event").map(n => ({ n, sc }))
+      ))
+      .find(({ n }) => n.id === nodeId);
+
+    if (eventHit) {
+      targetNodeId = eventHit.n.id;
+      targetType = "event";
+      setFocusedSceneId(eventHit.sc.id || null);
+      needsViewModeChange = viewMode !== "chronology";
+    } else {
+      // Rest of your existing logic for other node types...
+      // TEXT NODE
+      const textNode = story.chapters
+        .flatMap((ch) => ch.scenes.flatMap((sc) => sc.nodes))
+        .find((n) => n.id === nodeId && n.type === "text");
+      if (textNode) {
+        targetNodeId = textNode.id;
+        targetType = "text";
+        const parentScene = story.chapters
+          .flatMap((ch) => ch.scenes)
+          .find((sc) => sc.nodes.some((n) => n.id === textNode.id));
+        setFocusedSceneId(parentScene?.id || null);
+        needsViewModeChange = viewMode !== "text";
+      }
+
+      // CHAPTER NODE
+      if (!targetNodeId) {
+        const chapter = story.chapters.find(
+          (ch) => ch.chapterNode.id === nodeId || ch.id === nodeId
+        );
+        if (chapter) {
+          targetNodeId = chapter.chapterNode.id;
+          targetType = "chapter";
+          setFocusedSceneId(null);
+          needsViewModeChange = viewMode !== "text";
         }
+      }
 
-        // CHAPTER NODE
-        if (!targetNodeId) {
-          const chapter = story.chapters.find(
-            (ch) => ch.chapterNode.id === nodeId || ch.id === nodeId
-          );
-          if (chapter) {
-            targetNodeId = chapter.chapterNode.id;
-            setFocusedSceneId(null); // No scene context for chapter
-          }
+      // SCENE NODE
+      if (!targetNodeId) {
+        const scene = story.chapters
+          .flatMap((ch) => ch.scenes)
+          .find((sc) => sc.id === nodeId || sc.nodes.some((n) => n.id === nodeId));
+        if (scene) {
+          const firstText = scene.nodes.find((n) => n.type === "text");
+          if (firstText) targetNodeId = firstText.id;
+          targetType = "scene";
+          setFocusedSceneId(scene.id);
+          needsViewModeChange = viewMode !== "text";
         }
+      }
+    }
 
-        // SCENE NODE
-        if (!targetNodeId) {
-          const scene = story.chapters
-            .flatMap((ch) => ch.scenes)
-            .find((sc) => sc.id === nodeId || sc.nodes.some((n) => n.id === nodeId));
-          if (scene) {
-            const firstText = scene.nodes.find((n) => n.type === "text");
-            if (firstText) targetNodeId = firstText.id;
-            setFocusedSceneId(scene.id);
-          }
-        }
-
-        // Scroll behavior
-        if (targetNodeId && nodeRefs.current[targetNodeId]) {
-          const mainLayout = containerRef.current?.closest(".main-layout");
-          const initialScrollTop = mainLayout?.scrollTop || 0;
-          nodeRefs.current[targetNodeId]?.scrollIntoView({ behavior: "smooth", block: "center" });
-          if (mainLayout) mainLayout.scrollTop = initialScrollTop; // Prevent layout shift
+    const doScroll = () => {
+      if (targetNodeId && nodeRefs.current[targetNodeId]) {
+        const scroller = containerRef.current;
+        const el = nodeRefs.current[targetNodeId]!;
+        if (scroller) {
+          const scrollerTop = scroller.getBoundingClientRect().top;
+          const elTop = el.getBoundingClientRect().top;
+          const current = scroller.scrollTop;
+          const delta =
+            elTop - scrollerTop - scroller.clientHeight / 2 + el.clientHeight / 2;
+          scroller.scrollTo({ top: current + delta, behavior: "smooth" });
         } else {
-          console.warn("⚠️ No ref found for:", targetNodeId || nodeId);
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
         }
-      },
-    }));
+      } else {
+        console.warn("⚠️ No ref found for:", targetNodeId || nodeId);
+      }
+    };
 
-    // ✅ Word count calculation
+    if (needsViewModeChange) {
+      // Set the new view mode
+      const newViewMode = targetType === "event" ? "chronology" : "text";
+      setViewMode(newViewMode);
+      
+      // Wait for the next render cycle to ensure the view has updated
+      requestAnimationFrame(() => {
+        // Additional small delay to ensure refs are populated
+        setTimeout(doScroll, 50);
+      });
+    } else {
+      doScroll();
+    }
+  }
+}));
+
     const totalWords = useMemo(
       () =>
         story.chapters.reduce(
@@ -120,7 +158,11 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
                   .filter((n): n is TextNode => n.type === "text")
                   .reduce(
                     (txtAcc, txt) =>
-                      txtAcc + txt.text.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length,
+                      txtAcc +
+                      txt.text
+                        .replace(/<[^>]+>/g, "")
+                        .split(/\s+/)
+                        .filter(Boolean).length,
                     0
                   ),
               0
@@ -138,13 +180,16 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
             .filter((n): n is TextNode => n.type === "text")
             .reduce(
               (txtAcc, txt) =>
-                txtAcc + txt.text.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length,
+                txtAcc +
+                txt.text
+                  .replace(/<[^>]+>/g, "")
+                  .split(/\s+/)
+                  .filter(Boolean).length,
               0
             ),
         0
       );
 
-    // ✅ Search filtering
     const hasActiveSearch = searchPerformed;
     const filteredChapters = hasActiveSearch
       ? story.chapters.filter((ch) => searchResults.chapters.includes(ch.id))
@@ -162,7 +207,6 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
           setHoveredDetails(null);
         }}
       >
-        {/* 🔍 Search bar */}
         <SearchBar
           onSearch={(results, reset) => {
             setSearchResults(results);
@@ -170,37 +214,32 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
           }}
         />
 
-        {/* 📊 Header */}
-        <TextEditorHeader totalWords={totalWords} />
+        <TextEditorHeader
+          totalWords={totalWords}
+          viewMode={viewMode}
+          onToggleView={() =>
+            setViewMode((prev) => (prev === "text" ? "chronology" : "text"))
+          }
+        />
 
-        {/* Chapters */}
-        {hasActiveSearch && filteredChapters.length === 0 ? (
-          <div style={{ padding: "20px", color: "#666", fontStyle: "italic", textAlign: "center" }}>
-            No results found. Try adjusting your search or clearing filters.
-          </div>
-        ) : (
-          filteredChapters.map((ch) => (
-            <ChapterBlock
-              key={ch.id}
-              chapter={ch}
-              index={story.chapters.findIndex((c) => c.id === ch.id)}
-              onFocusNode={onFocusNode}
-              hoveredId={hoveredId}
-              setHoveredId={setHoveredId}
-              hoveredSceneId={hoveredSceneId}
-              setHoveredSceneId={setHoveredSceneId}
-              hoveredChapterId={hoveredChapterId}
-              setHoveredChapterId={setHoveredChapterId}
-              setHoveredDetails={setHoveredDetails}
-              getChapterWordCount={getChapterWordCount}
-              nodeRefs={nodeRefs}
-              focusedNodeId={focusedNodeId || null}  // ✅ Use global directly
-              focusedSceneId={focusedSceneId}       // ✅ Scene context for highlighting
-              searchResults={searchResults}
-              searchQuery={searchResults.searchQuery || ""}
-            />
-          ))
-        )}
+        <TextEditorContent
+          story={story}
+          viewMode={viewMode}
+          hoveredId={hoveredId}
+          setHoveredId={setHoveredId}
+          hoveredSceneId={hoveredSceneId}
+          setHoveredSceneId={setHoveredSceneId}
+          hoveredChapterId={hoveredChapterId}
+          setHoveredChapterId={setHoveredChapterId}
+          setHoveredDetails={setHoveredDetails}
+          focusedNodeId={focusedNodeId || null}
+          focusedSceneId={focusedSceneId}
+          nodeRefs={nodeRefs}
+          onFocusNode={onFocusNode}
+          searchResults={searchResults}
+          searchPerformed={searchPerformed}
+          getChapterWordCount={getChapterWordCount}
+        />
 
         <style>
           {`

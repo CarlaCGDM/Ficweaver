@@ -16,7 +16,7 @@ html, body {
 
 .main-layout {
   display: flex;
-  height: 90vh; /* fixed height container below top toolbar */
+  height: 100vh; /* fixed height container below top toolbar */
   overflow: hidden; /* prevent global scrollbars */
 }
 
@@ -45,6 +45,5 @@ html, body {
 .text-editor {
   flex: 1;
   overflow-y: auto;
-  max-height: 100%;
   padding-right: 10px;
 }

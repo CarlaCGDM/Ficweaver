@@ -3,7 +3,7 @@ import { useStoryStore } from "../../../context/storyStore/storyStore";
 import { Search, X, ChevronDown } from "lucide-react"; // ✅ Lucide icons
 
 interface SearchBarProps {
-  onSearch: (results: { chapters: string[]; textNodes: string[]; searchQuery?: string }, reset?: boolean) => void;
+  onSearch: (results: { chapters: string[]; textNodes: string[]; eventNodes: string[]; searchQuery?: string }, reset?: boolean) => void;
 }
 
 export default function SearchBar({ onSearch }: SearchBarProps) {
@@ -14,7 +14,9 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     story.chapters.forEach((ch) =>
       ch.scenes.forEach((sc) =>
         sc.nodes.forEach((n) => {
-          if (n.type === "text" && n.tags) n.tags.forEach((t) => tags.add(t));
+          if ((n.type === "text" || n.type === "event") && n.tags) {
+            n.tags.forEach((t) => tags.add(t));
+          }
         })
       )
     );
@@ -44,40 +46,47 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     const newChips = chips.filter((c) => c !== tag);
     setChips(newChips);
     if (newChips.length === 0 && query.trim() === "") {
-      onSearch({ chapters: [], textNodes: [], searchQuery: "" }, true);
+      onSearch({ chapters: [], textNodes: [], eventNodes: [], searchQuery: "" }, true);
     }
   };
 
   const handleSearch = () => {
     const textTerm = query.trim().toLowerCase();
-    const results: { chapters: string[]; textNodes: string[]; searchQuery?: string } = { chapters: [], textNodes: [], searchQuery: textTerm };
+
+    const results: { chapters: string[]; textNodes: string[]; eventNodes: string[]; searchQuery?: string } = {
+      chapters: [],
+      textNodes: [],
+      eventNodes: [],
+      searchQuery: textTerm
+    };
 
     story.chapters.forEach((ch) => {
       let chapterHasMatch = false;
       ch.scenes.forEach((sc) => {
         sc.nodes.forEach((n) => {
-          if (n.type === "text") {
-            const matchesTagAll = chips.every((chip) => n.tags?.includes(chip));
-            const matchesTagAny = chips.some((chip) => n.tags?.includes(chip));
-            const matchesText =
-              !textTerm ||
-              n.text.toLowerCase().includes(textTerm) ||
-              n.summary?.toLowerCase().includes(textTerm);
+          const matchesTagAll = chips.every((chip) => n.tags?.includes(chip));
+          const matchesTagAny = chips.some((chip) => n.tags?.includes(chip));
 
-            const matchLogic =
-              mode === "all"
-                ? (!chips.length || matchesTagAll) && (!textTerm || matchesText)
-                : (chips.length && matchesTagAny) || (textTerm && matchesText);
+          const matchesText =
+            !textTerm ||
+            (n.type === "text" && (n.text.toLowerCase().includes(textTerm) || n.summary?.toLowerCase().includes(textTerm))) ||
+            (n.type === "event" && (n.title?.toLowerCase().includes(textTerm) || n.tags?.some(t => t.toLowerCase().includes(textTerm))));
 
-            if (matchLogic) {
-              results.textNodes.push(n.id);
-              chapterHasMatch = true;
-            }
+          const matchLogic =
+            mode === "all"
+              ? (!chips.length || matchesTagAll) && (!textTerm || matchesText)
+              : (chips.length && matchesTagAny) || (textTerm && matchesText);
+
+          if (matchLogic) {
+            if (n.type === "text") results.textNodes.push(n.id);
+            if (n.type === "event") results.eventNodes.push(n.id);
+            chapterHasMatch = true;
           }
         });
       });
       if (chapterHasMatch) results.chapters.push(ch.id);
     });
+
 
     onSearch(results);
   };

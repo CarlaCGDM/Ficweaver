@@ -37,7 +37,7 @@ export default function EventNode({
         display: "flex",
         justifyContent: "center",
         flexDirection: "column",
-        background: "rgb(246, 246, 246)",
+        background: isFocused ? "rgb(255, 240, 189)" : "rgb(246, 246, 246)",
         border: "1px solid rgb(210, 210, 210)",
         borderRadius: "6px",
         boxShadow: "0 2px 6px rgba(0, 0, 0, 0.15)",

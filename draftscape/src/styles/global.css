@@ -1,0 +1,50 @@
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  font-family: sans-serif;
+  box-sizing: border-box;
+  overflow: hidden; /* keep overflow hidden here */
+  /* ✅ remove position: fixed to allow independent scroll areas to behave properly */
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.main-layout {
+  display: flex;
+  height: 90vh; /* fixed height container below top toolbar */
+  overflow: hidden; /* prevent global scrollbars */
+}
+
+.outline-panel {
+  width: 20vw;
+  min-width: 200px;
+  max-width: 400px;
+  border-right: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.outline-panel .scroll-container {
+  flex: 1;
+  overflow-y: auto; /* ✅ this is now the scrolling area */
+}
+
+.canvas-container {
+  width: 50vw;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.text-editor {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 100%;
+  padding-right: 10px;
+}

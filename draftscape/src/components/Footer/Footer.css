@@ -1,0 +1,52 @@
+.footer {
+  background: #2c2c2c;
+  color: #f0f0f0;
+  padding: 0.5vh 1vw;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Left and right stay apart */
+  height: 5vh;
+  position: relative;
+}
+
+.footer-left,
+.footer-center,
+.footer-right {
+  display: flex;
+  align-items: center;
+}
+
+.footer-center {
+  position: absolute; /* Center it absolutely */
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.footer-left p,
+.footer-center p {
+  margin: 0;
+}
+
+.footer-center a {
+  color: #f0f0f0;
+  text-decoration: none;
+  margin: 0 0.5vw;
+}
+
+.footer-center a:hover {
+  text-decoration: underline;
+}
+
+.footer-right .donate-button {
+  background: #ffcc00;
+  border: none;
+  padding: 1vh 0.8vw;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.footer-right .donate-button:hover {
+  background: #e6b800;
+}

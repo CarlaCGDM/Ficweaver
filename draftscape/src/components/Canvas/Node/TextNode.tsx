@@ -117,7 +117,7 @@ export default function TextNode({
           }}
         >
           <img
-            src={`/src/assets/stickers/flowers/${String(sticker.imageIndex).padStart(2, "0")}.png`}
+            src={`/stickers/flowers/${String(sticker.imageIndex).padStart(2, "0")}.png`}
             alt="Sticker"
             style={{
               position: "absolute",

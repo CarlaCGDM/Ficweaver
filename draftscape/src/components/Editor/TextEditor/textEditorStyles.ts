@@ -6,6 +6,7 @@ export const editorContainer: CSSProperties = {
   padding: "16px",
   fontFamily: "sans-serif",
   lineHeight: "1.5",
+  borderLeft: "1px solid #ddd",
 };
 
 export const totalWordsStyle: CSSProperties = {

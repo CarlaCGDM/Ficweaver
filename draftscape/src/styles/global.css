@@ -36,14 +36,34 @@ html, body {
 }
 
 .canvas-container {
-  width: 50vw;
-  flex-shrink: 0;
+  /* was: width: 50vw; flex-shrink: 0; */
+  flex: 0 0 50vw;     /* base: 50% viewport width */
   overflow: hidden;
   position: relative;
+}
+
+/* When the editor is hidden, let canvas consume all remaining space */
+.canvas-container.editor-expanded {
+  flex: 1 1 auto;     /* grow to fill everything after the outliner */
 }
 
 .text-editor {
   flex: 1;
   overflow-y: auto;
   padding-right: 10px;
+}
+
+/* Simple chevron that sits at the right edge of the canvas */
+.toggle-editor {
+  align-self: stretch;
+  width: 16px;
+  border: none;
+  background: #f3f3f3;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* visually sit between canvas and editor */
 }

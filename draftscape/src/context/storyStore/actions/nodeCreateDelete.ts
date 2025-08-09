@@ -12,7 +12,7 @@ export const nodeCrudActions = (set: any, get: any) => ({
     const chapterCount = story.chapters.length + 1;
     const chapterColor =
       CHAPTER_COLORS[(chapterCount - 1) % CHAPTER_COLORS.length];
-    const chapterTitle = `New Chapter ${chapterCount}`;
+    const chapterTitle = `New Chapter`;
 
     // 1. Determine insertion position
     let refPos = getLastNodePosition(story);

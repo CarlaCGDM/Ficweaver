@@ -14,13 +14,15 @@ interface CanvasProps {
   onEditNode: (node: NodeData) => void;
   onFocusNode: (nodeId: string) => void; // ✅ Add global focus handler
   focusedNodeId?: string;
+  className?: string;
 }
 
 export default function Canvas({ 
   onExposeFocus, 
   onEditNode, 
   onFocusNode, // ✅ Add this prop
-  focusedNodeId 
+  focusedNodeId,
+  className, 
 }: CanvasProps) {
   const story = useStoryStore((state) => state.story);
   const updateNodePosition = useStoryStore((state) => state.updateNodePosition);
@@ -73,7 +75,7 @@ export default function Canvas({
   );
 
   return (
-    <div className="canvas-container" style={{ position: "relative" }}>
+    <div className={`canvas-container ${className ?? ""}`} style={{ position: "relative" }}>
       <TransformWrapper
         ref={transformRef}
         initialScale={1}

@@ -15,6 +15,9 @@ export default function App() {
   const [editingNode, setEditingNode] = useState<NodeData | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
 
+  // 👇 NEW: editor visibility
+  const [isEditorVisible, setIsEditorVisible] = useState(true);
+
   const handleFocusNode = (nodeId?: string) => {
     if (!nodeId) return;
     focusNodeRef.current?.(nodeId);
@@ -27,26 +30,20 @@ export default function App() {
     console.log("🔄 Focus cleared");
   };
 
-  // ✅ Add keyboard listener for X key
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Only clear focus if not editing a node and X key is pressed
       if (e.key.toLowerCase() === 'x' && !editingNode) {
         clearFocus();
       }
     };
-
     document.addEventListener('keydown', handleKeyPress);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [editingNode]); // Re-run when editingNode changes
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [editingNode]);
 
   return (
     <div className="app">
-      <AccessCodeModal /> {/* 🔒 Prompt first-time visitors */}
-      
+      <AccessCodeModal />
+
       <Toolbar />
 
       <div className="main-layout">
@@ -56,17 +53,34 @@ export default function App() {
           focusedNodeId={focusedNodeId || undefined}
         />
 
+        {/* Pass a class so the canvas can expand when editor is hidden */}
         <Canvas
+          className={isEditorVisible ? "" : "editor-expanded"}
           onExposeFocus={(focus) => (focusNodeRef.current = focus)}
           onEditNode={setEditingNode}
           onFocusNode={handleFocusNode}
           focusedNodeId={focusedNodeId || undefined}
         />
 
-        <TextEditor
-          ref={textEditorRef}
-          onFocusNode={handleFocusNode}
-          focusedNodeId={focusedNodeId || undefined} />
+        {/* One chevron button that hides/shows the editor */}
+        <button
+          className="toggle-editor"
+          type="button"
+          onClick={() => setIsEditorVisible(v => !v)}
+          aria-label={isEditorVisible ? "Hide editor" : "Show editor"}
+          title={isEditorVisible ? "Hide editor" : "Show editor"}
+        >
+          {isEditorVisible ? "›" : "‹"}
+        </button>
+
+        {/* Only render the editor when visible */}
+        {isEditorVisible && (
+          <TextEditor
+            ref={textEditorRef}
+            onFocusNode={handleFocusNode}
+            focusedNodeId={focusedNodeId || undefined}
+          />
+        )}
       </div>
 
       {editingNode && <NodeEditModal node={editingNode} onClose={() => setEditingNode(null)} />}

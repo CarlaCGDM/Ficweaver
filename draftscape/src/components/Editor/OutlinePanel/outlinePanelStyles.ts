@@ -1,12 +1,10 @@
 import type { CSSProperties } from "react";
 
 export const outlinePanelContainer: CSSProperties = {
+  width: "20vw",
   display: "flex",
   flexDirection: "column",
   height: "100%",
-  width: "300px",
-  minWidth: "200px",
-  maxWidth: "400px",
   borderRight: "1px solid #ddd",
   background: "#f9f9f9",
   fontFamily: "sans-serif",

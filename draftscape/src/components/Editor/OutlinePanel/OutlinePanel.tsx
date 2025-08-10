@@ -12,6 +12,7 @@ import OutlineControls from "./OutlineControls";
 import { exportProjectAsZip } from "./utils/exportProjectAsZip";
 import { importProjectFromZip } from "./utils/importProjectFromZip";
 import { useImageStore } from "../../../context/imageStore/imageStore";
+import { safeScrollToCenter } from "../utils/safeScrollToCenter";
 
 interface OutlinePanelProps {
   onFocusNode: (nodeId: string) => void;
@@ -70,11 +71,13 @@ export default function OutlinePanel({
 
     // ✅ Scroll focused node into center view
     if (focusedNodeId && nodeRefs.current[focusedNodeId]) {
-      nodeRefs.current[focusedNodeId]?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
+  const scroller = containerRef.current;
+  const el = nodeRefs.current[focusedNodeId]!;
+  if (scroller) {
+    safeScrollToCenter(scroller, el);
+  }
+}
+
   }, [focusedNodeId, story.chapters]);
 
   const handleEditStoryTitle = () => {
@@ -97,13 +100,6 @@ export default function OutlinePanel({
   };
 
   const handleExportZip = () => exportProjectAsZip(story);
-
-  const handleImportZip = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    await importProjectFromZip(file);
-    e.target.value = "";
-  };
 
   return (
     <div style={outlinePanelContainer}>

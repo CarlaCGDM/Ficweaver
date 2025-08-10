@@ -67,7 +67,7 @@ export default function TextNode({
 
         const nodeIndex = scene.nodes.findIndex((n) => n.id === node.id);
         scene.nodes.slice(nodeIndex + 1).forEach((n) => {
-          if (n.type === "picture" || n.type === "annotation") return;
+          if (n.type === "picture" || n.type === "annotation" || n.type === "event") return;
           const group = collectShiftGroup(storyCopy, n.id);
           shiftNodes(storyCopy, group, { x: 0, y: deltaY });
         });

@@ -1,46 +1,71 @@
-import type { Story } from "../../../context/storyStore/types";
+import type { Story, NodeData } from "../../../context/storyStore/types";
 
 export function useCanvasFocus(transformRef: any, story: Story) {
-    const resetView = () => transformRef.current?.resetTransform();
+  const resetView = () => transformRef.current?.resetTransform();
 
-    const focusNode = (nodeId?: string) => {
-        if (!nodeId) {
-            resetView();
+  const NODE_WIDTHS: Record<NodeData["type"], number> = {
+    chapter: 600,
+    scene: 600,
+    text: 600,
+    event: 560,
+    picture: 200,
+    annotation: 300,
+  };
+
+  const getViewportSize = () => {
+    const el = document.querySelector(".canvas-container") as HTMLElement | null;
+    return {
+      width: el?.clientWidth ?? window.innerWidth,
+      height: el?.clientHeight ?? window.innerHeight,
+    };
+  };
+
+  const getNodeHeight = (nodeId: string) => {
+    const el = document.querySelector(`[data-node-id="${nodeId}"]`) as HTMLElement | null;
+    return el?.offsetHeight ?? 80; // fallback if not found
+  };
+
+  const centerOnPosition = (pos: { x: number; y: number }, type: NodeData["type"], nodeId: string) => {
+    if (!transformRef.current) return;
+
+    const state = transformRef.current.state || {};
+    const scale = state.scale ?? 1;
+
+    const { width: vw, height: vh } = getViewportSize();
+
+    const nodeWidth = NODE_WIDTHS[type] ?? 600;
+    const nodeHeight = getNodeHeight(nodeId);
+
+    const nodeCenterX = (pos.x + nodeWidth / 2) * scale;
+    const nodeCenterY = (pos.y + nodeHeight / 2) * scale;
+
+    const targetX = vw / 2 - nodeCenterX;
+    const targetY = vh / 2 - nodeCenterY;
+
+    transformRef.current.setTransform(targetX, targetY, scale, 200, "easeOut");
+  };
+
+  const focusNode = (nodeId?: string) => {
+    if (!nodeId) {
+      resetView();
+      return;
+    }
+
+    for (const ch of story.chapters) {
+      if (ch.chapterNode.id === nodeId) {
+        centerOnPosition(ch.chapterNode.position, ch.chapterNode.type, ch.chapterNode.id);
+        return;
+      }
+      for (const sc of ch.scenes) {
+        for (const n of sc.nodes) {
+          if (n.id === nodeId) {
+            centerOnPosition(n.position, n.type, n.id);
             return;
+          }
         }
+      }
+    }
+  };
 
-        for (const ch of story.chapters) {
-            if (ch.chapterNode.id === nodeId) {
-                centerOnPosition(ch.chapterNode.position);
-                return;
-            }
-            for (const sc of ch.scenes) {
-                for (const n of sc.nodes) {
-                    if (n.id === nodeId) {
-                        centerOnPosition(n.position);
-                        return;
-                    }
-                }
-            }
-        }
-    };
-
-    const NODE_WIDTH = 600;
-    const NODE_HEIGHT = 80; // approx.
-
-    const centerOnPosition = (pos: { x: number; y: number }) => {
-        if (!transformRef.current) return;
-
-        const state = transformRef.current.state || { scale: 1 };
-        const scale = state.scale ?? 1; // ✅ Default to 1 safely
-
-        const offsetX = window.innerWidth / 4 - (pos.x + NODE_WIDTH / 2) * scale;
-        const offsetY = window.innerHeight / 2 - (pos.y + NODE_HEIGHT / 2) * scale;
-
-        // ✅ Smoothly animate to position
-        transformRef.current.setTransform(offsetX, offsetY, scale, 200, "easeOut");
-    };
-
-
-    return { focusNode, resetView };
+  return { focusNode, resetView };
 }

@@ -24,24 +24,25 @@ export default function PictureNode({
   const [aspectRatio, setAspectRatio] = useState<number>(1); // width/height ratio
 
   useEffect(() => {
-  const imageData = imageMap[node.id];
+    const imageData = imageMap[node.id];
 
-  if (imageData) {
-    // ✅ imageData is always a base64 string now
-    setImageURL(imageData);
+    if (imageData) {
+      // ✅ imageData is always a base64 string now
+      setImageURL(imageData);
 
-    // Calculate aspect ratio
-    const img = new Image();
-    img.onload = () => setAspectRatio(img.width / img.height);
-    img.src = imageData;
-  } else {
-    setImageURL(null);
-  }
-}, [imageMap, node.id]);
+      // Calculate aspect ratio
+      const img = new Image();
+      img.onload = () => setAspectRatio(img.width / img.height);
+      img.src = imageData;
+    } else {
+      setImageURL(null);
+    }
+  }, [imageMap, node.id]);
 
 
   return (
     <div
+      data-node-id={node.id}
       onMouseDown={(e) => onMouseDown(e, node.id, node.position.x, node.position.y)}
       style={{
         ...baseStyle,

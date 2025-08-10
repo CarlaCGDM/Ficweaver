@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { CHAPTER_COLORS } from "../colors";
 import { getLastNodePosition, collectShiftGroup, shiftNodes } from "../helpers";
 import type { ChapterNode, SceneNode, TextNode } from "../types";
+import { getNodeHeightById } from "../../../components/Canvas/utils/nodeMetrics";
 
 export const nodeCrudActions = (set: any, get: any) => ({
   // ✅ Add Chapter (with undo/redo tracking)
@@ -16,8 +17,9 @@ export const nodeCrudActions = (set: any, get: any) => ({
 
     // 1. Determine insertion position
     let refPos = getLastNodePosition(story);
+    let verticalOffset = 100; // default fallback
     if (insertAfterNodeId) {
-      let foundNode = null;
+      let foundNode: any = null;
       outer: for (const ch of story.chapters) {
         if (ch.chapterNode.id === insertAfterNodeId) {
           foundNode = ch.chapterNode;
@@ -32,7 +34,10 @@ export const nodeCrudActions = (set: any, get: any) => ({
           }
         }
       }
-      if (foundNode) refPos = foundNode.position;
+      if (foundNode) {
+        refPos = foundNode.position;
+        verticalOffset = getNodeHeightById(foundNode.id) / 2 + 100;
+      }
     }
 
     // 2. Create the new chapter node
@@ -40,7 +45,7 @@ export const nodeCrudActions = (set: any, get: any) => ({
       id: nanoid(),
       type: "chapter",
       title: chapterTitle,
-      position: { x: refPos.x + 0, y: refPos.y + 100 },
+      position: { x: refPos.x, y: refPos.y + verticalOffset },
     };
     const newChapter = {
       id: nanoid(),
@@ -53,21 +58,20 @@ export const nodeCrudActions = (set: any, get: any) => ({
     // 3. Insert into story.chapters
     if (insertAfterNodeId) {
       const targetChapterIndex = story.chapters.findIndex(
-        (ch: { chapterNode: { id: string; }; scenes: any[]; }) =>
+        (ch: any) =>
           ch.chapterNode.id === insertAfterNodeId ||
-          ch.scenes.some((sc: { nodes: any[]; }) =>
-            sc.nodes.some((n: { id: string; }) => n.id === insertAfterNodeId)
+          ch.scenes.some((sc: any) =>
+            sc.nodes.some((n: any) => n.id === insertAfterNodeId)
           )
       );
       if (targetChapterIndex !== -1) {
         story.chapters.splice(targetChapterIndex + 1, 0, newChapter);
 
-        // 4. Shift all *subsequent* chapters (top-level only)
-        story.chapters.slice(targetChapterIndex + 2).forEach((subCh: { chapterNode: { type: string; id: string; }; }) => {
-          // guard so we only ever shift actual chapters
+        // 4. Shift all *subsequent* chapters
+        story.chapters.slice(targetChapterIndex + 2).forEach((subCh: any) => {
           if (subCh.chapterNode.type !== "chapter") return;
           const group = collectShiftGroup(story, subCh.chapterNode.id);
-          shiftNodes(story, group, { x: 0, y: 100 });
+          shiftNodes(story, group, { x: 0, y: verticalOffset });
         });
       } else {
         story.chapters.push(newChapter);
@@ -76,7 +80,6 @@ export const nodeCrudActions = (set: any, get: any) => ({
       story.chapters.push(newChapter);
     }
 
-    // 5. Commit
     set({ story });
   },
 
@@ -84,34 +87,44 @@ export const nodeCrudActions = (set: any, get: any) => ({
   addScene: (chapterId: string, insertAfterNodeId?: string) => {
     get().pushHistory();
     const story = { ...get().story };
-    const chapter = story.chapters.find((c: { id: string; }) => c.id === chapterId);
+    const chapter = story.chapters.find((c: any) => c.id === chapterId);
     if (!chapter) return;
 
     const sceneCount = chapter.scenes.length + 1;
     const sceneTitle = `New Scene ${sceneCount}`;
     const baseColor = chapter.color;
 
-    // Reference position logic
     let refPos = chapter.chapterNode.position;
+    let verticalOffset = getNodeHeightById(chapter.chapterNode.id) / 2 + 100;
+
     if (insertAfterNodeId && insertAfterNodeId !== chapter.chapterNode.id) {
-      const targetNode = chapter.scenes.flatMap((sc: { nodes: any; }) => sc.nodes).find((n: { id: string; }) => n.id === insertAfterNodeId);
-      if (targetNode) refPos = targetNode.position;
+      const targetNode = chapter.scenes
+        .flatMap((sc: any) => sc.nodes)
+        .find((n: any) => n.id === insertAfterNodeId);
+      if (targetNode) {
+        refPos = targetNode.position;
+        verticalOffset = getNodeHeightById(targetNode.id) / 2 + 100;
+      }
     } else if (insertAfterNodeId === chapter.chapterNode.id && chapter.scenes.length > 0) {
       const firstScene = chapter.scenes[0];
-      refPos = { x: firstScene.nodes[0].position.x - 0, y: firstScene.nodes[0].position.y - 100 };
+      refPos = firstScene.nodes[0].position;
+      verticalOffset = getNodeHeightById(chapter.chapterNode.id) / 2 + 100;
     } else if (chapter.scenes.length > 0) {
       const lastScene = chapter.scenes[chapter.scenes.length - 1];
-      const texts = lastScene.nodes.filter((n: { type: string; }) => n.type === "text");
-      refPos = texts.length > 0
-        ? texts[texts.length - 1].position
-        : (lastScene.nodes.find((n: { type: string; }) => n.type === "scene")?.position || refPos);
+      const lastNode =
+        lastScene.nodes.find((n: any) => n.type === "text") ||
+        lastScene.nodes.find((n: any) => n.type === "scene");
+      if (lastNode) {
+        refPos = lastNode.position;
+        verticalOffset = getNodeHeightById(lastNode.id) / 2 + 100;
+      }
     }
 
     const sceneNode: SceneNode = {
       id: nanoid(),
       type: "scene",
       title: sceneTitle,
-      position: { x: refPos.x + 0, y: refPos.y + 100 },
+      position: { x: refPos.x, y: refPos.y + verticalOffset },
     };
 
     const newScene = {
@@ -124,17 +137,19 @@ export const nodeCrudActions = (set: any, get: any) => ({
     if (insertAfterNodeId) {
       if (insertAfterNodeId === chapter.chapterNode.id) {
         chapter.scenes.unshift(newScene);
-        chapter.scenes.slice(1).forEach((sc: { nodes: { id: string; }[]; }) => {
+        chapter.scenes.slice(1).forEach((sc: any) => {
           const group = collectShiftGroup(story, sc.nodes[0].id);
-          shiftNodes(story, group, { x: 0, y: 100 });
+          shiftNodes(story, group, { x: 0, y: verticalOffset });
         });
       } else {
-        const index = chapter.scenes.findIndex((sc: { nodes: any[]; }) => sc.nodes.some((n: { id: string; }) => n.id === insertAfterNodeId));
+        const index = chapter.scenes.findIndex((sc: any) =>
+          sc.nodes.some((n: any) => n.id === insertAfterNodeId)
+        );
         if (index !== -1) {
           chapter.scenes.splice(index + 1, 0, newScene);
-          chapter.scenes.slice(index + 2).forEach((sc: { nodes: { id: string; }[]; }) => {
+          chapter.scenes.slice(index + 2).forEach((sc: any) => {
             const group = collectShiftGroup(story, sc.nodes[0].id);
-            shiftNodes(story, group, { x: 0, y: 100 });
+            shiftNodes(story, group, { x: 0, y: verticalOffset });
           });
         } else {
           chapter.scenes.push(newScene);
@@ -144,109 +159,97 @@ export const nodeCrudActions = (set: any, get: any) => ({
       chapter.scenes.push(newScene);
     }
 
-    // Shift later chapters
-    const chapterIndex = story.chapters.findIndex((c: { id: string; }) => c.id === chapterId);
-    story.chapters.slice(chapterIndex + 1).forEach((subCh: { chapterNode: { id: string; }; }) => {
+    const chapterIndex = story.chapters.findIndex((c: any) => c.id === chapterId);
+    story.chapters.slice(chapterIndex + 1).forEach((subCh: any) => {
       const group = collectShiftGroup(story, subCh.chapterNode.id);
-      shiftNodes(story, group, { x: 0, y: 100 });
+      shiftNodes(story, group, { x: 0, y: verticalOffset });
     });
 
     set({ story });
   },
 
   // ✅ Add Text Node
-  // ✅ Add Text Node
-addTextNode: (sceneId: string, insertAfterNodeId?: string) => {
-  // Save current state for undo
-  get().pushHistory();
+  addTextNode: (sceneId: string, insertAfterNodeId?: string) => {
+    get().pushHistory();
 
-  // Clone story
-  const story = { ...get().story };
+    const story = { ...get().story };
 
-  // Find the target scene
-  const scene = story.chapters
-    .flatMap((ch: { scenes: any; }) => ch.scenes)
-    .find((sc: { id: string; }) => sc.id === sceneId);
-  if (!scene) return;
+    const scene = story.chapters
+      .flatMap((ch: any) => ch.scenes)
+      .find((sc: any) => sc.id === sceneId);
+    if (!scene) return;
 
-  // Compute new node’s default text & position
-  const textCount = scene.nodes.filter((n: { type: string; }) => n.type === "text").length + 1;
-  const refNode = insertAfterNodeId
-    ? scene.nodes.find((n: { id: string; }) => n.id === insertAfterNodeId)!
-    : scene.nodes.length > 1
+    const textCount =
+      scene.nodes.filter((n: any) => n.type === "text").length + 1;
+
+    const refNode = insertAfterNodeId
+      ? scene.nodes.find((n: any) => n.id === insertAfterNodeId)!
+      : scene.nodes.length > 1
       ? scene.nodes[scene.nodes.length - 1]
       : scene.nodes[0];
 
-  // ── NEW STICKER LOGIC ──
-  const imageIndex = Math.floor(Math.random() * 7) + 1;
-  const corners = ["top-left", "top-right", "bottom-left", "bottom-right"] as const;
-  const corner = corners[Math.floor(Math.random() * corners.length)];
-  // ──────────────────────
+    const baseHeight = getNodeHeightById(refNode.id);
+    const verticalOffset = baseHeight / 2 + 100;
 
-  // Build the new text node
-  const textNode: TextNode = {
-    id: nanoid(),
-    type: "text",
-    text: `<p>New node ${textCount}.</p>`,
-    position: { x: refNode.position.x, y: refNode.position.y + 100 },
-    images: [],
-    // Persist sticker choice
-    sticker: {
-      imageIndex,
-      corner,
-    },
-  };
+    const imageIndex = Math.floor(Math.random() * 7) + 1;
+    const corners = ["top-left", "top-right", "bottom-left", "bottom-right"] as const;
+    const corner = corners[Math.floor(Math.random() * corners.length)];
 
-  // Insert the new node
-  if (insertAfterNodeId) {
-    const index = scene.nodes.findIndex((n: { id: string; }) => n.id === insertAfterNodeId);
-    if (index !== -1) {
-      scene.nodes.splice(index + 1, 0, textNode);
+    const textNode: TextNode = {
+      id: nanoid(),
+      type: "text",
+      text: `<p>New node ${textCount}.</p>`,
+      position: { x: refNode.position.x, y: refNode.position.y + verticalOffset },
+      images: [],
+      sticker: {
+        imageIndex,
+        corner,
+      },
+    };
 
-      // Shift subsequent text/scene nodes in this scene
-      const nodesToShift = scene.nodes.slice(index + 2);
-      nodesToShift.forEach((n: { type: string; id: string; }) => {
-        if (n.type === "picture" || n.type === "annotation") return;
-        const group = collectShiftGroup(story, n.id);
-        shiftNodes(story, group, { x: 0, y: 100 });
-      });
+    if (insertAfterNodeId) {
+      const index = scene.nodes.findIndex((n: any) => n.id === insertAfterNodeId);
+      if (index !== -1) {
+        scene.nodes.splice(index + 1, 0, textNode);
+        const nodesToShift = scene.nodes.slice(index + 2);
+        nodesToShift.forEach((n: any) => {
+          if (n.type === "picture" || n.type === "annotation" || n.type === "event") return;
+          const group = collectShiftGroup(story, n.id);
+          shiftNodes(story, group, { x: 0, y: verticalOffset });
+        });
+      } else {
+        scene.nodes.push(textNode);
+      }
     } else {
       scene.nodes.push(textNode);
     }
-  } else {
-    scene.nodes.push(textNode);
-  }
 
-  // Shift later scenes in the same chapter
-  const chapter = story.chapters.find((ch: { scenes: any[]; }) =>
-    ch.scenes.some((sc: { id: string; }) => sc.id === sceneId)
-  );
-  if (chapter) {
-    const sceneIndex = chapter.scenes.findIndex((sc: { id: string; }) => sc.id === sceneId);
-    chapter.scenes.slice(sceneIndex + 1).forEach((sc: { nodes: { id: string; }[]; }) => {
-      const group = collectShiftGroup(story, sc.nodes[0].id);
-      shiftNodes(story, group, { x: 0, y: 100 });
-    });
+    const chapter = story.chapters.find((ch: any) =>
+      ch.scenes.some((sc: any) => sc.id === sceneId)
+    );
+    if (chapter) {
+      const sceneIndex = chapter.scenes.findIndex((sc: any) => sc.id === sceneId);
+      chapter.scenes.slice(sceneIndex + 1).forEach((sc: any) => {
+        const group = collectShiftGroup(story, sc.nodes[0].id);
+        shiftNodes(story, group, { x: 0, y: verticalOffset });
+      });
 
-    // Shift later chapters
-    const chapterIndex = story.chapters.findIndex((c: { id: any; }) => c.id === chapter.id);
-    story.chapters.slice(chapterIndex + 1).forEach((subCh: { chapterNode: { id: string; }; }) => {
-      const group = collectShiftGroup(story, subCh.chapterNode.id);
-      shiftNodes(story, group, { x: 0, y: 100 });
-    });
-  }
+      const chapterIndex = story.chapters.findIndex((c: any) => c.id === chapter.id);
+      story.chapters.slice(chapterIndex + 1).forEach((subCh: any) => {
+        const group = collectShiftGroup(story, subCh.chapterNode.id);
+        shiftNodes(story, group, { x: 0, y: verticalOffset });
+      });
+    }
 
-  // Commit update
-  set({ story });
-},
-
+    set({ story });
+  },
 
   // ✅ Delete Node
   deleteNode: (nodeId: string) => {
     get().pushHistory();
     const story = { ...get().story };
 
-    const chapterIndex = story.chapters.findIndex((ch: { chapterNode: { id: string; }; }) => ch.chapterNode.id === nodeId);
+    const chapterIndex = story.chapters.findIndex((ch: any) => ch.chapterNode.id === nodeId);
     if (chapterIndex !== -1) {
       story.chapters.splice(chapterIndex, 1);
       set({ story });
@@ -254,7 +257,9 @@ addTextNode: (sceneId: string, insertAfterNodeId?: string) => {
     }
 
     for (const ch of story.chapters) {
-      const sceneIndex = ch.scenes.findIndex((sc: { nodes: any[]; }) => sc.nodes.some((n: { id: string; type: string; }) => n.id === nodeId && n.type === "scene"));
+      const sceneIndex = ch.scenes.findIndex((sc: any) =>
+        sc.nodes.some((n: any) => n.id === nodeId && n.type === "scene")
+      );
       if (sceneIndex !== -1) {
         ch.scenes.splice(sceneIndex, 1);
         set({ story });
@@ -262,9 +267,9 @@ addTextNode: (sceneId: string, insertAfterNodeId?: string) => {
       }
     }
 
-    story.chapters.forEach((ch: { scenes: any[]; }) => {
-      ch.scenes.forEach((sc: { nodes: any[]; }) => {
-        sc.nodes = sc.nodes.filter((n: { id: string; }) => n.id !== nodeId);
+    story.chapters.forEach((ch: any) => {
+      ch.scenes.forEach((sc: any) => {
+        sc.nodes = sc.nodes.filter((n: any) => n.id !== nodeId);
       });
     });
 

@@ -40,6 +40,7 @@ export default function AnnotationNode({
 
   return (
     <div
+      data-node-id={node.id}
       ref={nodeRef}
       onMouseDown={(e) => onMouseDown(e, node.id, node.position.x, node.position.y)}
       style={{

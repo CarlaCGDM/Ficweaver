@@ -18,13 +18,14 @@ export default function SceneNode({ ...props }: NodeProps & { focusedNodeId?: st
   const parentScene = parentChapter?.scenes.find((sc) => sc.nodes.some((n) => n.id === node.id));
 
   const attachedMedia = parentScene?.nodes.filter(
-    (n) => (n.type === "picture" || n.type === "annotation") && n.connectedTo === node.id
+    (n) => (n.type === "picture" || n.type === "annotation" || n.type === "event" ) && n.connectedTo === node.id
   ) || [];
 
   return (
     <>
       {/* Main Scene Node */}
       <div
+        data-node-id={node.id}
         onMouseDown={(e) => onMouseDown(e, node.id, node.position.x, node.position.y)}
         style={{
           ...baseStyle,

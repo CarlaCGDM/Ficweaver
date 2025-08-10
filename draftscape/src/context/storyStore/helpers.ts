@@ -42,77 +42,75 @@ export const collectShiftGroup = (story: Story, nodeId: string): string[] => {
 
 // Shift nodes by offset
 export const shiftNodes = (story: Story, nodeIds: string[], offset: Position) => {
-  nodeIds.forEach((id) => {
-    story.chapters.forEach((ch) => {
-      // ✅ Shift chapter node
-      if (ch.chapterNode.id === id) {
-        ch.chapterNode.position = {
-          x: ch.chapterNode.position.x + offset.x,
-          y: ch.chapterNode.position.y + offset.y,
+  story.chapters.forEach((ch) => {
+    // ✅ Shift chapter node
+    if (nodeIds.includes(ch.chapterNode.id)) {
+      ch.chapterNode.position = {
+        x: ch.chapterNode.position.x + offset.x,
+        y: ch.chapterNode.position.y + offset.y,
+      };
+
+      // ✅ Shift media linked directly to chapter
+      const chapterMedia = ch.scenes.flatMap((s) =>
+        s.nodes.filter(
+          (m) =>
+            (m.type === "picture" || m.type === "annotation" || m.type === "event") &&
+            m.connectedTo === ch.chapterNode.id
+        )
+      );
+      chapterMedia.forEach((m) => {
+        m.position = {
+          x: m.position.x + offset.x,
+          y: m.position.y + offset.y,
         };
-      }
+      });
+    }
 
-      // ✅ Shift nodes within scenes
-      ch.scenes.forEach((sc) => {
-        sc.nodes.forEach((n) => {
-          if (n.id === id) {
-            n.position = {
-              x: n.position.x + offset.x,
-              y: n.position.y + offset.y,
-            };
+    // ✅ Shift nodes within scenes
+    ch.scenes.forEach((sc) => {
+      sc.nodes.forEach((n) => {
+        if (nodeIds.includes(n.id)) {
+          n.position = {
+            x: n.position.x + offset.x,
+            y: n.position.y + offset.y,
+          };
 
-            // ✅ If this is a SCENE node, shift its media too
-            if (n.type === "scene") {
-              const sceneMedia = sc.nodes.filter(
-                (m) =>
-                  (m.type === "picture" || m.type === "annotation" || m.type === "event") &&
-                  m.connectedTo === n.id
-              );
-              sceneMedia.forEach((m) => {
-                m.position = {
-                  x: m.position.x + offset.x,
-                  y: m.position.y + offset.y,
-                };
-              });
-            }
-
-            // ✅ If this is a TEXT node, shift its media too
-            if (n.type === "text") {
-              const textMedia = sc.nodes.filter(
-                (m) =>
-                  (m.type === "picture" || m.type === "annotation" || m.type === "event") &&
-                  m.connectedTo === n.id
-              );
-              textMedia.forEach((m) => {
-                m.position = {
-                  x: m.position.x + offset.x,
-                  y: m.position.y + offset.y,
-                };
-              });
-            }
-
-            // ✅ If this is a CHAPTER node shift, include its media
-            if (ch.chapterNode.id === id) {
-              const chapterMedia = ch.scenes.flatMap((s) =>
-                s.nodes.filter(
-                  (m) =>
-                    (m.type === "picture" || m.type === "annotation") &&
-                    m.connectedTo === ch.chapterNode.id
-                )
-              );
-              chapterMedia.forEach((m) => {
-                m.position = {
-                  x: m.position.x + offset.x,
-                  y: m.position.y + offset.y,
-                };
-              });
-            }
+          // ✅ Scene-level shift for media linked to the scene
+          if (n.type === "scene") {
+            const sceneMedia = sc.nodes.filter(
+              (m) =>
+                (m.type === "picture" || m.type === "annotation" || m.type === "event") &&
+                m.connectedTo === n.id
+            );
+            sceneMedia.forEach((m) => {
+              m.position = {
+                x: m.position.x + offset.x,
+                y: m.position.y + offset.y,
+              };
+            });
           }
-        });
+
+          // ✅ Text-level shift for media linked to the text
+          if (n.type === "text") {
+            const textMedia = sc.nodes.filter(
+              (m) =>
+                (m.type === "picture" || m.type === "annotation" || m.type === "event") &&
+                m.connectedTo === n.id
+            );
+            textMedia.forEach((m) => {
+              m.position = {
+                x: m.position.x + offset.x,
+                y: m.position.y + offset.y,
+              };
+            });
+          }
+        }
       });
     });
   });
 };
+
+
 
 export const collectCanvasDragGroup = (story: Story, nodeId: string): string[] => {
   console.log("🔎 [helpers] collectCanvasDragGroup called for:", nodeId);
@@ -222,7 +220,7 @@ export const collectCanvasDragGroup = (story: Story, nodeId: string): string[] =
       const mediaNode = scene.nodes.find(
         (n) =>
           n.id === nodeId &&
-          (n.type === "picture" || n.type === "annotation")
+          (n.type === "picture" || n.type === "annotation" || n.type === "event")
       );
       if (mediaNode) return [mediaNode.id];
     }

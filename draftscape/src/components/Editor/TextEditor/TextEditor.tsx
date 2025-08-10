@@ -5,6 +5,7 @@ import { editorContainer } from "./textEditorStyles";
 import TextEditorHeader from "./TextEditorHeader";
 import SearchBar from "./SearchBar";
 import TextEditorContent from "./TextEditorContent";
+import { safeScrollToCenter } from "../utils/safeScrollToCenter";
 
 export interface TextEditorRef {
   scrollToNode: (nodeId: string) => void;
@@ -47,104 +48,100 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
     const containerRef = useRef<HTMLDivElement>(null);
     const nodeRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-   useImperativeHandle(ref, () => ({
-  scrollToNode(nodeId: string) {
-    console.log("🔍 scrollToNode called with:", nodeId);
+    useImperativeHandle(ref, () => ({
+      scrollToNode(nodeId: string) {
+        console.log("🔍 scrollToNode called with:", nodeId);
 
-    let targetNodeId: string | null = null;
-    let targetType: "text" | "chapter" | "scene" | "event" | null = null;
-    let needsViewModeChange = false;
+        let targetNodeId: string | null = null;
+        let targetType: "text" | "chapter" | "scene" | "event" | null = null;
+        let needsViewModeChange = false;
 
-    // Check for event nodes first since they have special view requirements
-    const eventHit = story.chapters
-      .flatMap(ch => ch.scenes.flatMap(sc => 
-        sc.nodes.filter(n => n.type === "event").map(n => ({ n, sc }))
-      ))
-      .find(({ n }) => n.id === nodeId);
+        // Check for event nodes first since they have special view requirements
+        const eventHit = story.chapters
+          .flatMap(ch => ch.scenes.flatMap(sc =>
+            sc.nodes.filter(n => n.type === "event").map(n => ({ n, sc }))
+          ))
+          .find(({ n }) => n.id === nodeId);
 
-    if (eventHit) {
-      targetNodeId = eventHit.n.id;
-      targetType = "event";
-      setFocusedSceneId(eventHit.sc.id || null);
-      needsViewModeChange = viewMode !== "chronology";
-    } else {
-      // Rest of your existing logic for other node types...
-      // TEXT NODE
-      const textNode = story.chapters
-        .flatMap((ch) => ch.scenes.flatMap((sc) => sc.nodes))
-        .find((n) => n.id === nodeId && n.type === "text");
-      if (textNode) {
-        targetNodeId = textNode.id;
-        targetType = "text";
-        const parentScene = story.chapters
-          .flatMap((ch) => ch.scenes)
-          .find((sc) => sc.nodes.some((n) => n.id === textNode.id));
-        setFocusedSceneId(parentScene?.id || null);
-        needsViewModeChange = viewMode !== "text";
-      }
-
-      // CHAPTER NODE
-      if (!targetNodeId) {
-        const chapter = story.chapters.find(
-          (ch) => ch.chapterNode.id === nodeId || ch.id === nodeId
-        );
-        if (chapter) {
-          targetNodeId = chapter.chapterNode.id;
-          targetType = "chapter";
-          setFocusedSceneId(null);
-          needsViewModeChange = viewMode !== "text";
-        }
-      }
-
-      // SCENE NODE
-      if (!targetNodeId) {
-        const scene = story.chapters
-          .flatMap((ch) => ch.scenes)
-          .find((sc) => sc.id === nodeId || sc.nodes.some((n) => n.id === nodeId));
-        if (scene) {
-          const firstText = scene.nodes.find((n) => n.type === "text");
-          if (firstText) targetNodeId = firstText.id;
-          targetType = "scene";
-          setFocusedSceneId(scene.id);
-          needsViewModeChange = viewMode !== "text";
-        }
-      }
-    }
-
-    const doScroll = () => {
-      if (targetNodeId && nodeRefs.current[targetNodeId]) {
-        const scroller = containerRef.current;
-        const el = nodeRefs.current[targetNodeId]!;
-        if (scroller) {
-          const scrollerTop = scroller.getBoundingClientRect().top;
-          const elTop = el.getBoundingClientRect().top;
-          const current = scroller.scrollTop;
-          const delta =
-            elTop - scrollerTop - scroller.clientHeight / 2 + el.clientHeight / 2;
-          scroller.scrollTo({ top: current + delta, behavior: "smooth" });
+        if (eventHit) {
+          targetNodeId = eventHit.n.id;
+          targetType = "event";
+          setFocusedSceneId(eventHit.sc.id || null);
+          needsViewModeChange = viewMode !== "chronology";
         } else {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      } else {
-        console.warn("⚠️ No ref found for:", targetNodeId || nodeId);
-      }
-    };
+          // Rest of your existing logic for other node types...
+          // TEXT NODE
+          const textNode = story.chapters
+            .flatMap((ch) => ch.scenes.flatMap((sc) => sc.nodes))
+            .find((n) => n.id === nodeId && n.type === "text");
+          if (textNode) {
+            targetNodeId = textNode.id;
+            targetType = "text";
+            const parentScene = story.chapters
+              .flatMap((ch) => ch.scenes)
+              .find((sc) => sc.nodes.some((n) => n.id === textNode.id));
+            setFocusedSceneId(parentScene?.id || null);
+            needsViewModeChange = viewMode !== "text";
+          }
 
-    if (needsViewModeChange) {
-      // Set the new view mode
-      const newViewMode = targetType === "event" ? "chronology" : "text";
-      setViewMode(newViewMode);
-      
-      // Wait for the next render cycle to ensure the view has updated
-      requestAnimationFrame(() => {
-        // Additional small delay to ensure refs are populated
-        setTimeout(doScroll, 50);
-      });
-    } else {
-      doScroll();
-    }
-  }
-}));
+          // CHAPTER NODE
+          if (!targetNodeId) {
+            const chapter = story.chapters.find(
+              (ch) => ch.chapterNode.id === nodeId || ch.id === nodeId
+            );
+            if (chapter) {
+              targetNodeId = chapter.chapterNode.id;
+              targetType = "chapter";
+              setFocusedSceneId(null);
+              needsViewModeChange = viewMode !== "text";
+            }
+          }
+
+          // SCENE NODE
+          if (!targetNodeId) {
+            const scene = story.chapters
+              .flatMap((ch) => ch.scenes)
+              .find((sc) => sc.id === nodeId || sc.nodes.some((n) => n.id === nodeId));
+            if (scene) {
+              const firstText = scene.nodes.find((n) => n.type === "text");
+              if (firstText) targetNodeId = firstText.id;
+              targetType = "scene";
+              setFocusedSceneId(scene.id);
+              needsViewModeChange = viewMode !== "text";
+            }
+          }
+        }
+
+        const doScroll = () => {
+          if (targetNodeId && nodeRefs.current[targetNodeId]) {
+            const scroller = containerRef.current;
+            const el = nodeRefs.current[targetNodeId]!;
+            if (scroller) {
+              safeScrollToCenter(scroller, el);
+            } else {
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          } else {
+            console.warn("⚠️ No ref found for:", targetNodeId || nodeId);
+          }
+        };
+
+
+        if (needsViewModeChange) {
+          // Set the new view mode
+          const newViewMode = targetType === "event" ? "chronology" : "text";
+          setViewMode(newViewMode);
+
+          // Wait for the next render cycle to ensure the view has updated
+          requestAnimationFrame(() => {
+            // Additional small delay to ensure refs are populated
+            setTimeout(doScroll, 50);
+          });
+        } else {
+          doScroll();
+        }
+      }
+    }));
 
     const totalWords = useMemo(
       () =>

@@ -21,13 +21,13 @@ html, body {
 }
 
 .outline-panel {
-  width: 20vw;
-  min-width: 200px;
-  max-width: 400px;
   border-right: 1px solid #ccc;
   display: flex;
   flex-direction: column;
   background: #fff;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: none;
 }
 
 .outline-panel .scroll-container {
@@ -51,6 +51,8 @@ html, body {
   flex: 1;
   overflow-y: auto;
   padding-right: 10px;
+   overflow-y: auto;
+  overscroll-behavior: none;
 }
 
 /* Simple chevron that sits at the right edge of the canvas */

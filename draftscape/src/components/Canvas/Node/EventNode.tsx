@@ -27,6 +27,7 @@ export default function EventNode({
 
     return (
         <div
+            data-node-id={node.id}
             onMouseDown={(e) => onMouseDown(e, node.id, node.position.x, node.position.y)}
             style={{
                 ...baseStyle,

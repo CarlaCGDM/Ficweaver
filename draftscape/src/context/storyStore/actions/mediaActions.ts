@@ -1,5 +1,4 @@
 import { nanoid } from "nanoid";
-import { EARTH_TONES } from "../colors";
 import type { PictureNode, AnnotationNode } from "../types";
 
 export const mediaActions = (set: any, get: any) => ({
@@ -11,7 +10,6 @@ export const mediaActions = (set: any, get: any) => ({
     get().pushHistory();
 
     const updatedStory = structuredClone(story);
-    const color = EARTH_TONES[Math.floor(Math.random() * EARTH_TONES.length)];
     let spawnPos = { x: 100, y: 100 };
 
     // ✅ Position near parent
@@ -37,7 +35,6 @@ export const mediaActions = (set: any, get: any) => ({
       id: nanoid(),
       type: "picture",
       description: "This is a picture description",
-      color,
       position: spawnPos,
       connectedTo: connectToNodeId || undefined,
     };
@@ -75,7 +72,6 @@ export const mediaActions = (set: any, get: any) => ({
           chapter = {
             id: nanoid(),
             title: "Loose Elements",
-            color: EARTH_TONES[0],
             chapterNode: {
               id: nanoid(),
               type: "chapter",
@@ -171,7 +167,6 @@ export const mediaActions = (set: any, get: any) => ({
           chapter = {
             id: nanoid(),
             title: "Loose Elements",
-            color: EARTH_TONES[0],
             chapterNode: {
               id: nanoid(),
               type: "chapter",

@@ -20,7 +20,7 @@ export const baseNodeStyle = (
 // ✅ Header style (for Chapter & Scene)
 export const headerStyle = (color: string): CSSProperties => ({
   background: color,
-  color: "var(--color-text)",
+  color: "white",
   fontSize: "12px",
   fontWeight: "bold",
   padding: "4px 6px",

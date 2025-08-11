@@ -22,6 +22,7 @@ function resolveColor(input?: string | number): string {
 const softTint = (color: string, pct = 30) =>
   `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 
+
 export default function TextNode({
   node,
   parentChapterId,
@@ -34,9 +35,12 @@ export default function TextNode({
   onEditNode,
   focusedNodeId,
 }: NodeProps & { focusedNodeId?: string }) {
-  const { stickerBasePath } = useTheme(); // 🎯 get base path from theme provider
+  const { stickerBasePath, themeId, mode } = useTheme(); // 🎯 get base path from theme provider
+  const [stickerExists, setStickerExists] = useState(true);
+  const lastThemeRef = useRef({ themeId, mode });
   const textNode = node as TextNodeType;
   const sticker = textNode.sticker;
+  const lastTextRef = useRef(textNode.text);
 
   // ✅ Resolve tokens (index or string) to CSS colors
   const resolvedChapterColor = resolveColor(chapterColor as any);
@@ -61,6 +65,12 @@ export default function TextNode({
 
   useLayoutEffect(() => {
     if (!nodeRef.current) return;
+    if (lastTextRef.current === textNode.text) return;
+    if (lastThemeRef.current.themeId !== themeId || lastThemeRef.current.mode !== mode) {
+      lastThemeRef.current = { themeId, mode };
+      prevHeightRef.current = nodeRef.current?.offsetHeight || 0;
+      return; // skip shift for theme changes
+    }
 
     const updateSize = () => {
       const el = nodeRef.current!;
@@ -126,7 +136,7 @@ export default function TextNode({
   return (
     <>
       {/* Sticker Layer */}
-      {sticker && (
+      {sticker && stickerExists && (
         <div
           style={{
             position: "absolute",
@@ -141,6 +151,7 @@ export default function TextNode({
           <img
             src={`${stickerBasePath}/${String(sticker.imageIndex).padStart(2, "0")}.png`}
             alt="Sticker"
+            onError={() => setStickerExists(false)} // ⬅ mark as not found
             style={{
               position: "absolute",
               width: "100px",

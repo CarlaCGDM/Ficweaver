@@ -71,9 +71,9 @@ export const THEMES: Record<string, ThemeConfig> = {
     },
     fonts: { ui: "Fredoka, sans-serif", display: "Fredoka, sans-serif" },
   },
-  medieval: {
-  id: "medieval",
-  label: "Medieval (Map)",
+  manuscript: {
+  id: "manuscript",
+  label: "Manuscript",
   colors: {
     light: {
       bg: "#e3d5b8ff",        // parchment base
@@ -107,8 +107,8 @@ export const THEMES: Record<string, ThemeConfig> = {
     dark:  ["#A28B68", "#5A6A7A", "#635640ff", "#85714F", "#353f48ff"],
   },
   stickerBasePath: {
-    light: "/assets/stickers/medieval/light",
-    dark:  "/assets/stickers/medieval/dark",
+    light: "/stickers/medieval/light",
+    dark:  "/stickers/medieval/dark",
   },
   fonts: {
     ui: "Uncial Antiqua, serif",
@@ -116,11 +116,9 @@ export const THEMES: Record<string, ThemeConfig> = {
   },
 },
 
-
-
-noir: {
-  id: "noir",
-  label: "Noir",
+typewriter: {
+  id: "typewriter",
+  label: "typewriter",
   colors: {
     light: {
       bg: "#F5F2EC",        // slightly dirty paper
@@ -162,6 +160,53 @@ noir: {
     display: "Special Elite, IBM Plex Mono, monospace",
   },
 },
+
+notebook: {
+  id: "notebook",
+  label: "Notebook",
+  colors: {
+    light: {
+      bg: "#FAFCFF",          // paper
+      panel: "#FFFFFF",       // white sheet/panel
+      panelAlt: "#EEF4FF",    // subtle blue tint for chips/stripes
+      text: "#143A7B",        // blue ink
+      border: "#D3DEEE",      // light ruled-line gray/blue
+      accent: "#E34B4B",      // red margin line
+      accentText: "#FFFFFF",
+      warningBg: "#FFF4B8",   // sticky-note yellow
+      warningBorder: "#E3D26A",
+      warningText: "#5A4B00",
+      nodeConnection: "#3E63B6", // pen line blue
+    },
+    dark: {
+      bg: "#0F172A",          // night-study navy
+      panel: "#18243A",       // deep slate
+      panelAlt: "#203048",    // a step lighter for contrast zones
+      text: "#EAF2FF",        // chalk/paper white
+      border: "#31425C",      // slate line
+      accent: "#FF6B6B",      // neon margin red
+      accentText: "#0F172A",
+      warningBg: "#3A2F1B",   // muted amber
+      warningBorder: "#D9B65A",
+      warningText: "#FFF3D0",
+      nodeConnection: "#9AB8FF", // pastel ink line
+    },
+  },
+  chapterColors: {
+    // pulled from your sticker palette
+    light: ["#0B66C3", "#FF6FA5", "#FFA24C", "#A7E3DC", "#E6C398"],
+    dark:  ["#0B66C3", "#FF6FA5", "#FFA24C", "#A7E3DC", "#E6C398"],
+  },
+  stickerBasePath: {
+    light: "/stickers/notebook/light",
+    dark:  "/stickers/notebook/dark",
+  },
+  fonts: {
+    ui: "Patrick Hand, Inter, system-ui, sans-serif",
+    display: "Caveat, Patrick Hand, cursive",
+  },
+},
+
 
 
 

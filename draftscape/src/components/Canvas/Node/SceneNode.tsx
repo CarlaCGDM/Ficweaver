@@ -1,8 +1,11 @@
+import { useRef, useLayoutEffect } from "react";
 import type { NodeProps } from "./Node";
 import type { SceneNode as SceneNodeType } from "../../../context/storyStore/types";
 import { baseNodeStyle, headerStyle } from "./nodeStyles";
 import NodeActions from "./NodeActions";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
+import { shiftNodes, collectShiftGroup } from "../../../context/storyStore/helpers";
+import { useTheme } from "../../../context/themeProvider/ThemeProvider";
 
 // Accepts string | number | undefined without upsetting TS
 function resolveColor(input: unknown, fallbackVar: string): string {
@@ -14,7 +17,9 @@ function resolveColor(input: unknown, fallbackVar: string): string {
 const softTint = (color: string, pct = 16) =>
   `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 
-export default function SceneNode({ ...props }: NodeProps & { focusedNodeId?: string; chapterIndex?: number; sceneIndex?: number }) {
+export default function SceneNode(
+  props: NodeProps & { focusedNodeId?: string; chapterIndex?: number; sceneIndex?: number }
+) {
   const {
     node,
     chapterColor,
@@ -38,9 +43,12 @@ export default function SceneNode({ ...props }: NodeProps & { focusedNodeId?: st
   const isFocused = focusedNodeId === node.id;
   const baseStyle = baseNodeStyle(isInDragGroup, glowColor);
 
-  // ✅ Access story to locate connected media
+  // Access story
   const story = useStoryStore((state) => state.story);
-  const parentChapter = story.chapters.find((ch) => ch.id === (props as any).parentChapterId);
+
+  // Figure out parent chapter + scene from IDs already used elsewhere
+  const parentChapterId = (props as any).parentChapterId as string | undefined;
+  const parentChapter = story.chapters.find((ch) => ch.id === parentChapterId);
   const parentScene = parentChapter?.scenes.find((sc) =>
     sc.nodes.some((n) => n.id === node.id)
   );
@@ -52,10 +60,101 @@ export default function SceneNode({ ...props }: NodeProps & { focusedNodeId?: st
         n.connectedTo === node.id
     ) || [];
 
+  // ===============================
+  // Resize-based shifting (theme-safe)
+  // ===============================
+  const { themeId, mode } = useTheme();
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const prevHeightRef = useRef(0);
+  const lastShiftDeltaRef = useRef(0);
+  const lastThemeRef = useRef({ themeId, mode });
+  const lastDescriptionRef = useRef(sceneNode.description);
+
+  useLayoutEffect(() => {
+    if (!nodeRef.current) return;
+    if (lastDescriptionRef.current === sceneNode.description) return;
+
+    const updateSize = () => {
+      const el = nodeRef.current!;
+      const height = el.offsetHeight;
+      const prevHeight = prevHeightRef.current;
+      const deltaY = height - prevHeight;
+
+      // If the theme/mode changed, treat this as a visual change only.
+      if (
+        lastThemeRef.current.themeId !== themeId ||
+        lastThemeRef.current.mode !== mode
+      ) {
+        lastThemeRef.current = { themeId, mode };
+        prevHeightRef.current = height;
+        return; // 🔒 don't shift on theme/font changes
+      }
+
+      // Only act on real changes, and avoid echoing the last delta we just produced
+      if (prevHeight > 0 && deltaY !== 0) {
+        if (Math.abs(deltaY) === Math.abs(lastShiftDeltaRef.current)) {
+          prevHeightRef.current = height;
+          return;
+        }
+
+        const storyCopy = { ...story };
+
+        // 1) Shift subsequent nodes in the same scene (after this scene node)
+        if (parentChapter && parentScene) {
+          const scene = storyCopy.chapters
+            .find((ch) => ch.id === parentChapter.id)!
+            .scenes.find((sc) => sc.id === parentScene.id)!;
+
+          const sceneNodeIndex = scene.nodes.findIndex((n) => n.id === node.id);
+          scene.nodes.slice(sceneNodeIndex + 1).forEach((n) => {
+            // media nodes are allowed to stay; we still shift them if they are linked in the group
+            const group = collectShiftGroup(storyCopy, n.id);
+            shiftNodes(storyCopy, group, { x: 0, y: deltaY });
+          });
+        }
+
+        // 2) Shift subsequent scenes in the same chapter
+        if (parentChapter && parentScene) {
+          const ch = storyCopy.chapters.find((c) => c.id === parentChapter.id)!;
+          const sceneIdx = ch.scenes.findIndex((sc) => sc.id === parentScene.id);
+          ch.scenes.slice(sceneIdx + 1).forEach((sc) => {
+            if (!sc.nodes.length) return;
+            const group = collectShiftGroup(storyCopy, sc.nodes[0].id);
+            shiftNodes(storyCopy, group, { x: 0, y: deltaY });
+          });
+        }
+
+        // 3) Shift subsequent chapters
+        if (parentChapter) {
+          const chapterIndexInStory = storyCopy.chapters.findIndex(
+            (ch) => ch.id === parentChapter.id
+          );
+          storyCopy.chapters.slice(chapterIndexInStory + 1).forEach((subCh) => {
+            const group = collectShiftGroup(storyCopy, subCh.chapterNode.id);
+            shiftNodes(storyCopy, group, { x: 0, y: deltaY });
+          });
+        }
+
+        useStoryStore.setState({ story: storyCopy });
+        lastShiftDeltaRef.current = deltaY;
+      }
+
+      prevHeightRef.current = height;
+    };
+
+    // Initial measure + observe
+    updateSize();
+    const ro = new ResizeObserver(updateSize);
+    ro.observe(nodeRef.current);
+
+    return () => ro.disconnect();
+  }, [story, parentChapterId, node.id, themeId, mode]);
+
   return (
     <>
       {/* Main Scene Node */}
       <div
+        ref={nodeRef}
         data-node-id={node.id}
         onMouseDown={(e) => onMouseDown(e, node.id, node.position.x, node.position.y)}
         style={{
@@ -111,7 +210,7 @@ export default function SceneNode({ ...props }: NodeProps & { focusedNodeId?: st
         </div>
       </div>
 
-      {/* ✅ Render Attached Media (pictures & annotations & events) */}
+      {/* Render Attached Media (pictures & annotations & events) */}
       {attachedMedia.map((media) => (
         <div
           key={media.id}

@@ -3,7 +3,7 @@ import type { PictureNode, AnnotationNode } from "../types";
 
 export const mediaActions = (set: any, get: any) => ({
 
-  // ✅ Add Picture Node
+  // ✅ Add Picture Node (no ghost scene)
   addPictureNode: (connectToNodeId: any) => {
     console.log("🎨 [AddPictureNode] Starting. Connected to:", connectToNodeId);
     const { story } = get();
@@ -12,7 +12,7 @@ export const mediaActions = (set: any, get: any) => ({
     const updatedStory = structuredClone(story);
     let spawnPos = { x: 100, y: 100 };
 
-    // ✅ Position near parent
+    // Position near parent
     if (connectToNodeId) {
       for (const ch of updatedStory.chapters) {
         if (ch.chapterNode.id === connectToNodeId) {
@@ -39,7 +39,7 @@ export const mediaActions = (set: any, get: any) => ({
       connectedTo: connectToNodeId || undefined,
     };
 
-    // ✅ Scene or chapter insertion
+    // Scene or chapter insertion
     let parentScene = null;
     if (connectToNodeId) {
       parentScene = updatedStory.chapters
@@ -52,21 +52,23 @@ export const mediaActions = (set: any, get: any) => ({
       parentScene.nodes.push(newNode);
     } else {
       const targetChapter = updatedStory.chapters.find(
-        (ch: { chapterNode: { id: any; }; }) => ch.chapterNode.id === connectToNodeId
+        (ch: { chapterNode: { id: any } }) => ch.chapterNode.id === connectToNodeId
       );
+
       if (targetChapter) {
+        // 🚫 No ghost scene — keep as chapter-level loose media until scenes exist
+        const chAny = targetChapter as any;
         if (!targetChapter.scenes.length) {
-          targetChapter.scenes.push({
-            id: nanoid(),
-            title: "Unlinked",
-            color: targetChapter.color,
-            nodes: [],
-          });
+          if (!Array.isArray(chAny._looseMedia)) chAny._looseMedia = [];
+          chAny._looseMedia.push(newNode);
+          console.log(`📌 Picture node added to chapter "${targetChapter.title}" (loose, no scenes yet)`);
+        } else {
+          targetChapter.scenes[0].nodes.push(newNode);
+          console.log(`📌 Picture node added to chapter "${targetChapter.title}" in first scene`);
         }
-        targetChapter.scenes[0].nodes.push(newNode);
-        console.log(`📌 Picture node added to chapter "${targetChapter.title}"`);
       } else {
-        console.warn("⚠ No parent found. Adding to fallback chapter/scene.");
+        console.warn("⚠ No parent found. Adding to fallback chapter.");
+        // Fallback: create or use first chapter, still avoid ghost scenes
         let chapter = updatedStory.chapters[0];
         if (!chapter) {
           chapter = {
@@ -79,18 +81,18 @@ export const mediaActions = (set: any, get: any) => ({
               position: { x: 0, y: 0 },
             },
             scenes: [],
-          };
+          } as any;
           updatedStory.chapters.push(chapter);
         }
+        const chAny = chapter as any;
         if (!chapter.scenes.length) {
-          chapter.scenes.push({
-            id: nanoid(),
-            title: "Unlinked",
-            color: chapter.color,
-            nodes: [],
-          });
+          if (!Array.isArray(chAny._looseMedia)) chAny._looseMedia = [];
+          chAny._looseMedia.push(newNode);
+          console.log(`📌 Picture node added to fallback chapter "${chapter.title}" (loose)`);
+        } else {
+          chapter.scenes[0].nodes.push(newNode);
+          console.log(`📌 Picture node added to fallback chapter "${chapter.title}" in first scene`);
         }
-        chapter.scenes[0].nodes.push(newNode);
       }
     }
 

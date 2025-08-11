@@ -16,21 +16,17 @@ export default function PictureNode({
   const pictureNode = node as PictureNodeType;
   const isFocused = focusedNodeId === node.id;
 
-  const baseStyle = baseNodeStyle(isInDragGroup, "#8B5E3C");
+  // Node base style now uses theme var for the accent border
+  const baseStyle = baseNodeStyle(isInDragGroup, "var(--chapter-color-2)");
 
-  // ✅ Access the image store to retrieve the image (now stored as Base64 string)
   const { imageMap } = useImageStore();
   const [imageURL, setImageURL] = useState<string | null>(null);
-  const [aspectRatio, setAspectRatio] = useState<number>(1); // width/height ratio
+  const [aspectRatio, setAspectRatio] = useState<number>(1);
 
   useEffect(() => {
     const imageData = imageMap[node.id];
-
     if (imageData) {
-      // ✅ imageData is always a base64 string now
       setImageURL(imageData);
-
-      // Calculate aspect ratio
       const img = new Image();
       img.onload = () => setAspectRatio(img.width / img.height);
       img.src = imageData;
@@ -39,11 +35,13 @@ export default function PictureNode({
     }
   }, [imageMap, node.id]);
 
-
   return (
     <div
+      className="picture-node"
       data-node-id={node.id}
-      onMouseDown={(e) => onMouseDown(e, node.id, node.position.x, node.position.y)}
+      onMouseDown={(e) =>
+        onMouseDown(e, node.id, node.position.x, node.position.y)
+      }
       style={{
         ...baseStyle,
         top: node.position.y,
@@ -53,9 +51,9 @@ export default function PictureNode({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        background: "#fff",
+        background: "var(--color-bg)",
         borderRadius: "6px",
-        boxShadow: "0 2px 6px rgba(0, 0, 0, 0.15)",
+        boxShadow: "var(--node-shadow)",
         padding: "6px",
         zIndex: 100,
       }}
@@ -67,7 +65,7 @@ export default function PictureNode({
         style={{
           width: "100%",
           height: `${200 / aspectRatio}px`,
-          background: "#eee",
+          background: "var(--color-panel)",
           borderRadius: "4px",
           marginBottom: "6px",
           display: "flex",
@@ -83,16 +81,24 @@ export default function PictureNode({
             style={{
               width: "100%",
               height: "100%",
-              objectFit: "contain", // maintain proportions inside container
+              objectFit: "contain",
             }}
           />
         ) : (
-          <span style={{ fontSize: "12px", color: "#777" }}>No Image</span>
+          <span style={{ fontSize: "12px", color: "var(--color-mutedText)" }}>
+            No Image
+          </span>
         )}
       </div>
 
       {/* Description Below */}
-      <div style={{ fontSize: "11px", textAlign: "center", color: "#333" }}>
+      <div
+        style={{
+          fontSize: "11px",
+          textAlign: "center",
+          color: "var(--color-text)",
+        }}
+      >
         {pictureNode.description || "Picture description"}
       </div>
     </div>

@@ -1,7 +1,9 @@
+// NodeActions.tsx
 import { useState, useMemo } from "react";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
 import type { NodeData } from "../../../context/storyStore/types";
 import { Edit3, Trash2, Plus } from "lucide-react";
+import { useTheme } from "../../../context/themeProvider/ThemeProvider";
 
 interface NodeActionsProps {
   nodeId: string;
@@ -18,6 +20,24 @@ export default function NodeActions({ nodeId, onEditNode }: NodeActionsProps) {
   const addAnnotationNode = useStoryStore((state) => state.addAnnotationNode);
   const addEventNode = useStoryStore((state) => state.addEventNode);
 
+  // ✅ Theme colors (including chapter palette)
+  const { theme, mode } = useTheme();
+  const chapterColors = theme.chapterColors?.[mode] ?? [];
+
+  // Helper: prefer theme array, fall back to CSS var set by ThemeProvider
+  const getChapterColor = (i: number) =>
+    chapterColors[i] ?? `var(--chapter-color-${i + 1})`;
+
+  // Palette mapping for buttons
+  const buttonPalette = {
+    chapter: getChapterColor(0),
+    picture: getChapterColor(1),
+    text: getChapterColor(2),
+    scene: getChapterColor(3),
+    annotation: getChapterColor(4),
+    // If a 6th color exists, use it for event; otherwise fall back to accent
+    event: chapterColors[5] ?? "var(--color-accent)",
+  };
 
   const [hovered, setHovered] = useState(false);
 
@@ -37,22 +57,30 @@ export default function NodeActions({ nodeId, onEditNode }: NodeActionsProps) {
   if (!hierarchy) return null;
   const { nodeType, chapter, scene, node } = hierarchy;
 
-  const isMediaNode = nodeType === "picture" || nodeType === "annotation" || nodeType === "event";;
+  const isMediaNode =
+    nodeType === "picture" || nodeType === "annotation" || nodeType === "event";
 
   const showNewText = !isMediaNode && (nodeType === "scene" || nodeType === "text");
-  const showNewScene = !isMediaNode && (
-    nodeType === "chapter" ||
-    (scene && (() => {
-      const lastNonMediaNode = [...scene.nodes].reverse().find((n) => n.type === "text" || n.type === "scene");
+  const showNewScene =
+    !isMediaNode &&
+    (nodeType === "chapter" ||
+      (scene &&
+        (() => {
+          const lastNonMediaNode = [...scene.nodes]
+            .reverse()
+            .find((n) => n.type === "text" || n.type === "scene");
+          return lastNonMediaNode?.id === nodeId;
+        })()));
+  const showNewChapter =
+    !isMediaNode &&
+    (() => {
+      const lastScene = chapter.scenes[chapter.scenes.length - 1];
+      if (!lastScene) return nodeType === "chapter";
+      const lastNonMediaNode = [...lastScene.nodes]
+        .reverse()
+        .find((n) => n.type === "text" || n.type === "scene");
       return lastNonMediaNode?.id === nodeId;
-    })())
-  );
-  const showNewChapter = !isMediaNode && (() => {
-    const lastScene = chapter.scenes[chapter.scenes.length - 1];
-    if (!lastScene) return nodeType === "chapter";
-    const lastNonMediaNode = [...lastScene.nodes].reverse().find((n) => n.type === "text" || n.type === "scene");
-    return lastNonMediaNode?.id === nodeId;
-  })();
+    })();
 
   const handleAddText = () => scene && addTextNode(scene.id, nodeId);
   const handleAddScene = () => addScene(chapter.id, nodeId);
@@ -61,7 +89,10 @@ export default function NodeActions({ nodeId, onEditNode }: NodeActionsProps) {
   const handleAddAnnotation = () => addAnnotationNode(nodeId);
   const handleAddEvent = () => addEventNode(nodeId);
 
-  const handleEditNode = (e: React.MouseEvent) => { e.stopPropagation(); onEditNode(node); };
+  const handleEditNode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEditNode(node);
+  };
   const handleDeleteNode = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm("Delete this node?")) deleteNode(nodeId);
@@ -72,9 +103,9 @@ export default function NodeActions({ nodeId, onEditNode }: NodeActionsProps) {
       style={{
         position: "absolute",
         top: "-40px",
-        right: "-40px", // ✅ shift left to cover edit/delete
+        right: "-40px",
         width: "calc(100% + 50px)",
-        height: "calc(100% + 90px)", // extra space for horizontal bar
+        height: "calc(100% + 90px)",
         zIndex: 300,
       }}
       onMouseEnter={() => setHovered(true)}
@@ -82,7 +113,7 @@ export default function NodeActions({ nodeId, onEditNode }: NodeActionsProps) {
     >
       {hovered && (
         <>
-          {/* ✅ Vertical Edit/Delete Stack */}
+          {/* ✅ Vertical Edit/Delete Stack (theme-aware) */}
           <div
             style={{
               position: "absolute",
@@ -93,11 +124,15 @@ export default function NodeActions({ nodeId, onEditNode }: NodeActionsProps) {
               gap: "6px",
             }}
           >
-            <button onClick={handleEditNode} style={editDeleteBtnStyle}><Edit3 size={18} /></button>
-            <button onClick={handleDeleteNode} style={editDeleteBtnStyle}><Trash2 size={18} /></button>
+            <button onClick={handleEditNode} style={editDeleteBtnStyle}>
+              <Edit3 size={18} />
+            </button>
+            <button onClick={handleDeleteNode} style={editDeleteBtnStyle}>
+              <Trash2 size={18} />
+            </button>
           </div>
 
-          {/* ✅ Horizontal Add Buttons Row */}
+          {/* ✅ Horizontal Add Buttons Row (chapter palette) */}
           {!isMediaNode && (
             <div
               style={{
@@ -109,16 +144,37 @@ export default function NodeActions({ nodeId, onEditNode }: NodeActionsProps) {
                 gap: "6px",
               }}
             >
-              {showNewChapter && <button onClick={handleAddChapter} style={addBtnStyle("#766DA7")}><Plus size={16} /> 📘</button>}
-              {showNewScene && <button onClick={handleAddScene} style={addBtnStyle("#556842")}><Plus size={16} /> 🎬</button>}
-              {showNewText && <button onClick={handleAddText} style={addBtnStyle("#7A9663")}><Plus size={16} /> 📝</button>}
-              <button onClick={handleAddPicture} style={addBtnStyle("#15191E")}><Plus size={16} /> 🖼️</button>
-              <button onClick={handleAddAnnotation} style={addBtnStyle("#A0AE91")}><Plus size={16} /> 💬</button>
-              <button disabled style={{ ...addBtnStyle("#555"), opacity: 0.5 }}><Plus size={16} /> 🎵</button>
-              <button onClick={handleAddEvent} style={addBtnStyle("#888888")}>
+              {showNewChapter && (
+                <button onClick={handleAddChapter} style={addBtnStyle(buttonPalette.chapter)}>
+                  <Plus size={16} /> 📘
+                </button>
+              )}
+              {showNewScene && (
+                <button onClick={handleAddScene} style={addBtnStyle(buttonPalette.scene)}>
+                  <Plus size={16} /> 🎬
+                </button>
+              )}
+              {showNewText && (
+                <button onClick={handleAddText} style={addBtnStyle(buttonPalette.text)}>
+                  <Plus size={16} /> 📝
+                </button>
+              )}
+              <button onClick={handleAddPicture} style={addBtnStyle(buttonPalette.picture)}>
+                <Plus size={16} /> 🖼️
+              </button>
+              <button onClick={handleAddAnnotation} style={addBtnStyle(buttonPalette.annotation)}>
+                <Plus size={16} /> 💬
+              </button>
+              <button
+                disabled
+                style={{ ...addBtnStyle(buttonPalette.chapter), opacity: 0.5 }}
+                title="Audio coming soon"
+              >
+                <Plus size={16} /> 🎵
+              </button>
+              <button onClick={handleAddEvent} style={addBtnStyle(buttonPalette.event)}>
                 <Plus size={16} /> ⏱️
               </button>
-
             </div>
           )}
         </>
@@ -127,10 +183,11 @@ export default function NodeActions({ nodeId, onEditNode }: NodeActionsProps) {
   );
 }
 
+/** Theme-aware base styles */
 const editDeleteBtnStyle: React.CSSProperties = {
-  background: "#f8f8f8",
-  border: "1px solid #ccc",
-  color: "#333",
+  background: "var(--color-panelAlt)",
+  border: "1px solid var(--color-border)",
+  color: "var(--color-text)",
   borderRadius: "4px",
   width: "35px",
   height: "35px",
@@ -142,8 +199,8 @@ const editDeleteBtnStyle: React.CSSProperties = {
 
 const addBtnStyle = (bg: string): React.CSSProperties => ({
   background: bg,
-  color: "white",
-  border: "none",
+  color: "var(--color-accentText)",
+  border: "1px solid var(--color-border)",
   borderRadius: "4px",
   padding: "6px 10px",
   display: "flex",

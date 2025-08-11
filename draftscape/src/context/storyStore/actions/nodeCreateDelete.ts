@@ -5,32 +5,28 @@ import { getLastNodePosition, collectShiftGroup, shiftNodes } from "../helpers";
 import type { ChapterNode, SceneNode, TextNode } from "../types";
 import { getNodeHeightById } from "../../../components/Canvas/utils/nodeMetrics";
 
+const DEFAULT_PALETTE_SIZE = 5; // matches how many chapter-color vars you expose
+
 export const nodeCrudActions = (set: any, get: any) => ({
   // ✅ Add Chapter (with undo/redo tracking)
   addChapter: (insertAfterNodeId?: string) => {
     get().pushHistory();
     const story = { ...get().story };
+
     const chapterCount = story.chapters.length + 1;
-    const chapterColor =
-      CHAPTER_COLORS[(chapterCount - 1) % CHAPTER_COLORS.length];
+    const chapterColorIndex = (chapterCount - 1) % DEFAULT_PALETTE_SIZE;
     const chapterTitle = `New Chapter`;
 
-    // 1. Determine insertion position
+    // 1) Determine insertion position
     let refPos = getLastNodePosition(story);
-    let verticalOffset = 100; // default fallback
+    let verticalOffset = 100;
     if (insertAfterNodeId) {
       let foundNode: any = null;
       outer: for (const ch of story.chapters) {
-        if (ch.chapterNode.id === insertAfterNodeId) {
-          foundNode = ch.chapterNode;
-          break outer;
-        }
+        if (ch.chapterNode.id === insertAfterNodeId) { foundNode = ch.chapterNode; break outer; }
         for (const sc of ch.scenes) {
           for (const n of sc.nodes) {
-            if (n.id === insertAfterNodeId) {
-              foundNode = n;
-              break outer;
-            }
+            if (n.id === insertAfterNodeId) { foundNode = n; break outer; }
           }
         }
       }
@@ -40,22 +36,23 @@ export const nodeCrudActions = (set: any, get: any) => ({
       }
     }
 
-    // 2. Create the new chapter node
+    // 2) Create the new chapter node
     const chapterNode: ChapterNode = {
       id: nanoid(),
       type: "chapter",
       title: chapterTitle,
       position: { x: refPos.x, y: refPos.y + verticalOffset },
     };
+
     const newChapter = {
       id: nanoid(),
       title: chapterTitle,
       chapterNode,
-      color: chapterColor,
+      colorIndex: chapterColorIndex, // 👈 store index, not hex
       scenes: [],
     };
 
-    // 3. Insert into story.chapters
+    // 3) Insert into story.chapters
     if (insertAfterNodeId) {
       const targetChapterIndex = story.chapters.findIndex(
         (ch: any) =>
@@ -66,10 +63,8 @@ export const nodeCrudActions = (set: any, get: any) => ({
       );
       if (targetChapterIndex !== -1) {
         story.chapters.splice(targetChapterIndex + 1, 0, newChapter);
-
-        // 4. Shift all *subsequent* chapters
+        // 4) Shift subsequent chapters
         story.chapters.slice(targetChapterIndex + 2).forEach((subCh: any) => {
-          if (subCh.chapterNode.type !== "chapter") return;
           const group = collectShiftGroup(story, subCh.chapterNode.id);
           shiftNodes(story, group, { x: 0, y: verticalOffset });
         });
@@ -84,7 +79,7 @@ export const nodeCrudActions = (set: any, get: any) => ({
   },
 
   // ✅ Add Scene
-  addScene: (chapterId: string, insertAfterNodeId?: string) => {
+ addScene: (chapterId: string, insertAfterNodeId?: string) => {
     get().pushHistory();
     const story = { ...get().story };
     const chapter = story.chapters.find((c: any) => c.id === chapterId);
@@ -92,7 +87,6 @@ export const nodeCrudActions = (set: any, get: any) => ({
 
     const sceneCount = chapter.scenes.length + 1;
     const sceneTitle = `New Scene ${sceneCount}`;
-    const baseColor = chapter.color;
 
     let refPos = chapter.chapterNode.position;
     let verticalOffset = getNodeHeightById(chapter.chapterNode.id) / 2 + 100;
@@ -130,7 +124,7 @@ export const nodeCrudActions = (set: any, get: any) => ({
     const newScene = {
       id: nanoid(),
       title: sceneTitle,
-      color: baseColor,
+      colorIndex: chapter.colorIndex ?? 0, // 👈 mirror the chapter index (optional)
       nodes: [sceneNode],
     };
 
@@ -167,7 +161,6 @@ export const nodeCrudActions = (set: any, get: any) => ({
 
     set({ story });
   },
-
   // ✅ Add Text Node
   addTextNode: (sceneId: string, insertAfterNodeId?: string) => {
     get().pushHistory();

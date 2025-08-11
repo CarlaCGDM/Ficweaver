@@ -1,0 +1,192 @@
+.toolbar {
+  height: 5vh;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 10px;
+  background: var(--color-bg);
+  color: var(--color-text); /* ✅ base text color */
+  position: relative;
+  gap: 8px;
+  font-family: var(--font-ui);
+  z-index: 2000;
+}
+
+.toolbar-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--chapter-color-1); /* keep chapter accent */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-warning {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 50%;
+  background: var(--color-warningBg);
+  border: 1px solid var(--color-warningBorder);
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-warningText);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 5;
+  text-align: center;
+  pointer-events: none;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.toolbar-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--color-text); /* ✅ ensure button text adapts */
+}
+
+.theme-trigger {
+  border: 1px solid var(--color-border);
+}
+
+.theme-menu {
+  position: absolute;
+  right: 40px;
+  top: 100%;
+  margin-top: 6px;
+  width: 280px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  z-index: 500;
+  padding: 10px;
+  color: var(--color-text); /* ✅ menu inherits theme text color */
+}
+
+.mode-switch {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--color-text); /* ✅ switch text adapts */
+}
+
+.mode-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-status {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.theme-list {
+  margin-top: 10px;
+}
+
+.theme-list-label {
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  color: var(--color-text);
+  opacity: 0.7; /* muted effect */
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--color-bg);
+  cursor: pointer;
+  color: var(--color-text); /* ✅ theme option text adapts */
+}
+
+.theme-option.selected {
+  background: var(--color-panel);
+}
+
+.unlock-section {
+  margin-top: 12px;
+}
+
+.unlock-label {
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-text);
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+
+.unlock-input {
+  display: flex;
+  gap: 6px;
+}
+
+.unlock-input input {
+  flex: 1;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--color-text); /* ✅ input text adapts */
+  background: var(--color-panel); /* theme panel bg */
+}
+
+.unlock-input button {
+  border: 1px solid var(--color-border);
+  background: var(--color-panel);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--color-text); /* ✅ button text adapts */
+}
+
+.unlock-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  text-decoration: underline;
+  color: var(--color-accent);
+}

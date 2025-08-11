@@ -17,6 +17,18 @@ interface ChapterItemProps {
   nodeRefs: React.MutableRefObject<Record<string, HTMLLIElement | null>>;
 }
 
+// Normalize chapter color (handles legacy numeric color or new string)
+function resolveChapterColor(chapter: Chapter): string {
+  const anyCh = chapter as any;
+  if (typeof anyCh.colorIndex === "number") {
+    return `var(--chapter-color-${anyCh.colorIndex + 1})`;
+  }
+  if (typeof chapter.color === "number") {
+    return `var(--chapter-color-${(chapter.color as number) + 1})`;
+  }
+  return (chapter.color as string) ?? `var(--chapter-color-1)`;
+}
+
 export default function ChapterItem({
   chapter,
   focusedNodeId,
@@ -33,6 +45,10 @@ export default function ChapterItem({
   const deleteNode = useStoryStore((state) => state.deleteNode);
 
   const isFocused = focusedNodeId === chapter.chapterNode.id;
+  const chapterColor = resolveChapterColor(chapter);
+
+  // Precompute header base style
+  const headerBase = chapterHeaderStyle(chapterColor);
 
   return (
     <li
@@ -44,8 +60,10 @@ export default function ChapterItem({
       {/* Chapter Header */}
       <div
         style={{
-          ...chapterHeaderStyle(chapter.color),
-          background: isFocused ? "rgb(238, 172, 73)" : chapterHeaderStyle(chapter.color).background,
+          ...headerBase,
+          background: isFocused ? "var(--color-warningBg)" : headerBase.background,
+          // keep the text readable on warning background
+          color: isFocused ? "var(--color-text)" : headerBase.color,
         }}
         onClick={() => onFocusNode(chapter.chapterNode.id)}
       >
@@ -77,7 +95,7 @@ export default function ChapterItem({
               key={sc.id}
               scene={sc}
               chapterId={chapter.id}
-              chapterColor={chapter.color}
+              chapterColor={chapterColor}         
               focusedNodeId={focusedNodeId}
               onFocusNode={onFocusNode}
               onEditNode={onEditNode}

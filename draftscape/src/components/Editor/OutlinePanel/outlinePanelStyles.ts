@@ -5,10 +5,11 @@ export const outlinePanelContainer: CSSProperties = {
   display: "flex",
   flexDirection: "column",
   height: "100%",
-  borderRight: "1px solid #ddd",
-  background: "#f9f9f9",
-  fontFamily: "sans-serif",
+  borderRight: "1px solid var(--color-border)",
+  background: "var(--color-panel)",
+  fontFamily: "var(--font-ui)",
   fontSize: "14px",
+  color: "var(--color-text)",
 };
 
 // ✅ Scrollable content inside OutlinePanel
@@ -22,8 +23,8 @@ export const scrollContainer: CSSProperties = {
 export const toolbarContainer: CSSProperties = {
   display: "flex",
   justifyContent: "center",
-  background: "#f8f8f8",
-  borderBottom: "1px solid #ddd",
+  background: "var(--color-panel)",
+  borderBottom: "1px solid var(--color-border)",
   width: "100%",
   flexShrink: 0,
 };
@@ -33,10 +34,10 @@ export const toolbarBtnStyle: CSSProperties = {
   background: "transparent",
   width: "7vw",
   border: "none",
-  fontFamily: "'Fredoka', sans-serif",
+  fontFamily: "var(--font-ui)",
   fontSize: "14px",
   fontWeight: "500",
-  color: "#333",
+  color: "var(--color-text)",
   padding: "8px 0px",
   display: "flex",
   justifyContent: "center",
@@ -52,7 +53,7 @@ export const titleRowStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  marginBottom: "8px",
+  marginBottom: "12px",
 };
 
 // ✅ Control row (Add Chapter, Open/Close All, Show Actions)
@@ -68,13 +69,13 @@ export const buttonStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   gap: "6px",
-  background: "#f0f0f0",
+  background: "var(--color-panelAlt)",
   border: "none",
   borderRadius: "4px",
-  fontFamily: "'Fredoka', sans-serif",
+  fontFamily: "var(--font-ui)",
   fontSize: "12px",
   fontWeight: "500",
-  color: "#333",
+  color: "var(--color-text)",
   padding: "2px 4px",
   cursor: "pointer",
   transition: "background 0.2s",
@@ -115,7 +116,7 @@ export const textItemStyle = (): CSSProperties => ({
   alignItems: "center",
   padding: "2px 0",
   fontSize: "12px",
-  color: "#333",
+  color: "var(--color-text)",
   marginBottom: "2px",
 });
 
@@ -126,6 +127,7 @@ export const pinButtonStyle: CSSProperties = {
   border: "none",
   cursor: "pointer",
   fontSize: "12px",
+  color: "var(--color-text)",
 };
 
 // ✅ Row of action buttons (edit/delete/insert)
@@ -149,10 +151,10 @@ export const textItemBaseStyle: CSSProperties = {
 
 export const textItemFocusedStyle: CSSProperties = {
   ...textItemBaseStyle,
-  background: "rgb(255, 240, 189)",
+  background: "var(--color-warningBg)",
 };
 
 export const textItemUnfocusedStyle: CSSProperties = {
   ...textItemBaseStyle,
-  background: "white",
+  background: "var(--color-bg)",
 };

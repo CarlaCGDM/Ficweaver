@@ -35,7 +35,7 @@ export default function OutlineToolbar({ onExport }: { onExport: () => void }) {
     <div style={toolbarContainer}>
       <button
         style={toolbarBtnStyle}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "#e0e0e0")}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-panelAlt)")}
         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         onClick={handleNewStory}
       >
@@ -44,7 +44,7 @@ export default function OutlineToolbar({ onExport }: { onExport: () => void }) {
 
       <button
         style={toolbarBtnStyle}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "#e0e0e0")}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-panelAlt)")}
         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         onClick={onExport}
       >
@@ -53,7 +53,7 @@ export default function OutlineToolbar({ onExport }: { onExport: () => void }) {
 
       <label
         style={{ ...toolbarBtnStyle, cursor: "pointer" }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "#e0e0e0")}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-panelAlt)")}
         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
       >
         <Upload size={16} /> Load

@@ -8,12 +8,11 @@ export const baseNodeStyle = (
   position: "absolute",
   width: "600px",
   minHeight: "40px",
-  background: "white",
   //border: isInDragGroup ? `2px solid ${glowColor}` : "1px solid #ccc",
   borderRadius: "6px",
   boxShadow: isInDragGroup
-    ? `0 0 10px ${glowColor}80`
-    : "0 2px 5px rgba(0,0,0,0.1)",
+    ? "var(--node-shadow)"
+    : "0 2px 5px rgba(0,0,0,0)",
   overflow: "visible", // ✅ Changed from "hidden" to "visible"
   userSelect: "none",
 });
@@ -21,7 +20,7 @@ export const baseNodeStyle = (
 // ✅ Header style (for Chapter & Scene)
 export const headerStyle = (color: string): CSSProperties => ({
   background: color,
-  color: "white",
+  color: "var(--color-text)",
   fontSize: "12px",
   fontWeight: "bold",
   padding: "4px 6px",
@@ -32,9 +31,9 @@ export const headerStyle = (color: string): CSSProperties => ({
 // ✅ Mini-header style (for TextNode chapter/scene labels)
 export const miniHeaderStyle = (color: string): CSSProperties => ({
   background: color,
-  color: "white",
+  color: "var(--color-text)",
   fontSize: "10px",
   padding: "2px 4px",
   borderRadius: "3px",
-  marginBottom: "2px",
+  marginBottom: "4px",
 });

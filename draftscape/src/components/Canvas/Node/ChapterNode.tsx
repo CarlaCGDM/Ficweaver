@@ -2,13 +2,29 @@ import type { NodeProps } from "./Node";
 import type { ChapterNode as ChapterNodeType } from "../../../context/storyStore/types";
 import { baseNodeStyle, headerStyle } from "./nodeStyles";
 import NodeActions from "./NodeActions";
-
 import { useStoryStore } from "../../../context/storyStore/storyStore";
 
-export default function ChapterNode({ ...props }: NodeProps & { focusedNodeId?: string }) {
+/** Normalize chapter color:
+ *  - number  -> var(--chapter-color-N)  (N = index+1)
+ *  - string  -> use as-is
+ *  - empty   -> fallback to var(--chapter-color-1)
+ */
+function resolveChapterColor(input?: string | number): string {
+  if (typeof input === "number") return `var(--chapter-color-${input + 1})`;
+  if (typeof input === "string" && input.trim()) return input;
+  return "var(--chapter-color-1)";
+}
+
+// Make a soft tint that also works with CSS vars
+const softTint = (color: string, pct = 20) =>
+  `color-mix(in srgb, ${color} ${pct}%, transparent)`;
+
+export default function ChapterNode({ ...props }: NodeProps & { focusedNodeId?: string; chapterIndex?: number }) {
   const { node, chapterColor, isDragging, isInDragGroup, onMouseDown, onEditNode, chapterIndex, focusedNodeId } = props;
   const chapterNode = node as ChapterNodeType;
-  const glowColor = chapterColor || "#007BFF";
+
+  const resolvedChapterColor = resolveChapterColor(chapterColor);
+  const glowColor = resolvedChapterColor || "var(--color-accent)";
   const isFocused = focusedNodeId === node.id;
   const baseStyle = baseNodeStyle(isInDragGroup, glowColor);
 
@@ -16,9 +32,14 @@ export default function ChapterNode({ ...props }: NodeProps & { focusedNodeId?: 
   const story = useStoryStore((state) => state.story);
   const parentChapter = story.chapters.find((ch) => ch.chapterNode.id === node.id);
 
-  const attachedMedia = parentChapter?.scenes.flatMap((sc) =>
-    sc.nodes.filter((n) => (n.type === "picture" || n.type === "annotation" || n.type === "event") && n.connectedTo === node.id)
-  ) || [];
+  const attachedMedia =
+    parentChapter?.scenes.flatMap((sc) =>
+      sc.nodes.filter(
+        (n) =>
+          (n.type === "picture" || n.type === "annotation" || n.type === "event") &&
+          n.connectedTo === node.id
+      )
+    ) || [];
 
   return (
     <>
@@ -27,7 +48,8 @@ export default function ChapterNode({ ...props }: NodeProps & { focusedNodeId?: 
         onMouseDown={(e) => onMouseDown(e, node.id, node.position.x, node.position.y)}
         style={{
           ...baseStyle,
-          background: isFocused ? "rgb(255, 240, 189)" : "white", // White base background
+          background: isFocused ? "var(--color-warningBg)" : "var(--color-bg)",
+          border: "1px solid var(--color-border)",
           top: node.position.y,
           left: node.position.x,
           cursor: isDragging ? "grabbing" : "grab",
@@ -36,30 +58,39 @@ export default function ChapterNode({ ...props }: NodeProps & { focusedNodeId?: 
           position: "absolute",
         }}
       >
-        {/* Color overlay with low opacity */}
+        {/* Subtle color wash behind content */}
         {!isFocused && (
           <div
             style={{
               position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: chapterColor,
-              opacity: 0.2, // Adjust this value (0.1 to 0.3 usually works well)
-              pointerEvents: "none", // Allows clicks to pass through
+              inset: 0,
+              background: softTint(resolvedChapterColor, 20), // ~20% tint of chapter color
+              pointerEvents: "none",
+              borderRadius: "6px",
               zIndex: 0,
             }}
           />
         )}
 
         <NodeActions nodeId={node.id} onEditNode={onEditNode} />
-        <div style={{ ...headerStyle(chapterColor || "#fdf3d0"), position: "relative", zIndex: 1 }}>
+
+        <div
+          style={{
+            ...headerStyle(resolvedChapterColor),
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           📘 Chapter {chapterIndex !== undefined ? chapterIndex + 1 : "?"}
         </div>
+
         <div style={{ padding: "8px", position: "relative", zIndex: 1 }}>
           <div style={{ fontWeight: "bold", marginBottom: "4px" }}>{chapterNode.title}</div>
-          {chapterNode.description && <div style={{ fontSize: "12px", color: "#444" }}>{chapterNode.description}</div>}
+          {chapterNode.description && (
+            <div style={{ fontSize: "12px", color: "var(--color-text)" }}>
+              {chapterNode.description}
+            </div>
+          )}
         </div>
       </div>
 

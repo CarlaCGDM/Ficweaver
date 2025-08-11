@@ -9,16 +9,18 @@ interface CanvasOverlayProps {
   onZoomOut: () => void;
 }
 
-export default function CanvasOverlay({ onResetView: _onResetView, onZoomIn: _onZoomIn, onZoomOut: _onZoomOut }: CanvasOverlayProps) {
+export default function CanvasOverlay({
+  onResetView: _onResetView,
+  onZoomIn: _onZoomIn,
+  onZoomOut: _onZoomOut,
+}: CanvasOverlayProps) {
   const undo = useStoryStore((s) => s.undo);
   const redo = useStoryStore((s) => s.redo);
   const past = useStoryStore((s) => s.past ?? []);
   const future = useStoryStore((s) => s.future ?? []);
 
-
   const [showGuide, setShowGuide] = useState(false);
 
-  // ✅ Keyboard shortcuts for Undo (Ctrl+Z) and Redo (Ctrl+Shift+Z / Ctrl+Y)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isMac = navigator.platform.toUpperCase().includes("MAC");
@@ -110,13 +112,14 @@ export default function CanvasOverlay({ onResetView: _onResetView, onZoomIn: _on
             width: "30px",
             height: "30px",
             borderRadius: "50%",
-            border: "1px solid #ccc",
-            background: "white",
-            boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+            border: "1px solid var(--color-border)",
+            background: "var(--color-bg)",
+            boxShadow: "var(--node-shadow)",
             cursor: "pointer",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            color: "var(--color-text)",
           }}
         >
           <PiQuestionMarkLight size={20} />
@@ -130,42 +133,50 @@ export default function CanvasOverlay({ onResetView: _onResetView, onZoomIn: _on
               bottom: "40px",
               left: 0,
               width: "260px",
-              background: "white",
+              background: "var(--color-bg)",
+              border: "1px solid var(--color-border)",
               borderRadius: "6px",
-              boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-              fontFamily: "'Fredoka', sans-serif",
+              boxShadow: "var(--node-shadow)",
+              fontFamily: "var(--font-ui)",
               fontSize: "12px",
-              color: "#333",
+              color: "var(--color-text)",
               lineHeight: 1.6,
               padding: "10px",
               zIndex: 1001,
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <Hand size={14} color={"#766DA7"} /> <span style={guideKeywordStyle}>Pan</span> - Left/middle mouse button
+              <Hand size={14} color={"var(--color-accent)"} />{" "}
+              <span style={guideKeywordStyle}>Pan</span> - Left/middle mouse button
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <Move size={14} color={"#766DA7"} /> <span style={guideKeywordStyle}>Move node</span> - Left click + drag
+              <Move size={14} color={"var(--color-accent)"} />{" "}
+              <span style={guideKeywordStyle}>Move node</span> - Left click + drag
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <MousePointer size={14} color={"#766DA7"} /> <span style={guideKeywordStyle}>Select node</span> - Double left click
+              <MousePointer size={14} color={"var(--color-accent)"} />{" "}
+              <span style={guideKeywordStyle}>Select node</span> - Double left click
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <X size={14} color={"#766DA7"} /> <span style={guideKeywordStyle}>Clear selection</span> - X
+              <X size={14} color={"var(--color-accent)"} />{" "}
+              <span style={guideKeywordStyle}>Clear selection</span> - X
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <ZoomIn size={14} color={"#766DA7"} /> <span style={guideKeywordStyle}>Zoom</span> - Mouse wheel
+              <ZoomIn size={14} color={"var(--color-accent)"} />{" "}
+              <span style={guideKeywordStyle}>Zoom</span> - Mouse wheel
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <Undo2 size={14} color={"#766DA7"} /> <span style={guideKeywordStyle}>Undo</span> - CTRL + Z
+              <Undo2 size={14} color={"var(--color-accent)"} />{" "}
+              <span style={guideKeywordStyle}>Undo</span> - CTRL + Z
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <Redo2 size={14} color={"#766DA7"} /> <span style={guideKeywordStyle}>Redo</span> - CTRL + SHIFT + Z
+              <Redo2 size={14} color={"var(--color-accent)"} />{" "}
+              <span style={guideKeywordStyle}>Redo</span> - CTRL + SHIFT + Z
             </div>
-             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <Maximize size={14} color={"#766DA7"} /> <span style={guideKeywordStyle}>Fullscreen</span> - F11
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <Maximize size={14} color={"var(--color-accent)"} />{" "}
+              <span style={guideKeywordStyle}>Fullscreen</span> - F11
             </div>
-
           </div>
         )}
       </div>
@@ -178,18 +189,17 @@ const iconButtonStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   gap: "4px",
-  background: "#f8f8f8",
-  border: "1px solid #ccc",
-  fontFamily: "'Fredoka', sans-serif",
+  background: "var(--color-panel)",
+  border: "1px solid var(--color-border)",
+  fontFamily: "var(--font-ui)",
   fontSize: "14px",
-  fontWeight: "500",
-  color: "#333",
+  fontWeight: 500,
+  color: "var(--color-text)",
   padding: "6px 10px",
   borderRadius: "4px",
   transition: "background 0.2s",
 };
 
 const guideKeywordStyle: React.CSSProperties = {
-  color: "#766DA7",
-  //fontWeight: "bold",
+  color: "var(--color-accent)",
 };

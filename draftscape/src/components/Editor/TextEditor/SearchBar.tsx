@@ -29,7 +29,6 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-
   const filteredTags = useMemo(() => {
     if (!query.startsWith("[")) return [];
     const q = query.slice(1).toLowerCase();
@@ -57,7 +56,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
       chapters: [],
       textNodes: [],
       eventNodes: [],
-      searchQuery: textTerm
+      searchQuery: textTerm,
     };
 
     story.chapters.forEach((ch) => {
@@ -70,7 +69,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
           const matchesText =
             !textTerm ||
             (n.type === "text" && (n.text.toLowerCase().includes(textTerm) || n.summary?.toLowerCase().includes(textTerm))) ||
-            (n.type === "event" && (n.title?.toLowerCase().includes(textTerm) || n.tags?.some(t => t.toLowerCase().includes(textTerm))));
+            (n.type === "event" && (n.title?.toLowerCase().includes(textTerm) || n.tags?.some((t) => t.toLowerCase().includes(textTerm))));
 
           const matchLogic =
             mode === "all"
@@ -87,7 +86,6 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
       if (chapterHasMatch) results.chapters.push(ch.id);
     });
 
-
     onSearch(results);
   };
 
@@ -97,7 +95,6 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     setShowDropdown(val.startsWith("["));
     if (val.trim() === "" && chips.length === 0) {
       onSearch({ chapters: [], textNodes: [], eventNodes: [], searchQuery: "" }, true);
-
     }
   };
 
@@ -126,25 +123,28 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
         style={{
           display: "flex",
           alignItems: "center",
-          border: "1px solid #ccc",
+          border: "1px solid var(--color-border)",
           padding: "4px 6px",
           borderRadius: "6px",
-          background: "#fff",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+          background: "var(--color-bg)",
           height: "30px",
+          color: "var(--color-text)",
+          fontFamily: "var(--font-ui)",
         }}
       >
         {chips.map((chip) => (
           <span
             key={chip}
             style={{
-              background: "#f2f2f2",
+              background: "var(--color-tagBg)",
               padding: "2px 6px",
               marginRight: "4px",
               borderRadius: "4px",
               display: "flex",
               alignItems: "center",
               fontSize: "13px",
+              color: "var(--color-text)",
+              border: "1px solid var(--color-border)",
             }}
           >
             [{chip}]
@@ -158,6 +158,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
                 display: "flex",
                 alignItems: "center",
                 padding: 0,
+                color: "var(--color-mutedText)",
               }}
             >
               <X size={14} strokeWidth={2} />
@@ -178,6 +179,8 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
             fontSize: "14px",
             marginLeft: "4px",
             background: "transparent",
+            color: "var(--color-text)",
+            fontFamily: "var(--font-ui)",
           }}
         />
 
@@ -192,7 +195,8 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
             alignItems: "center",
             border: "none",
             background: "transparent",
-            color: "#555",
+            color: "var(--color-mutedText)",
+            fontFamily: "var(--font-ui)",
           }}
         >
           {mode === "all" ? "All" : "Any"}
@@ -209,7 +213,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
             background: "transparent",
             display: "flex",
             alignItems: "center",
-            color: "#555",
+            color: "var(--color-mutedText)",
           }}
         >
           <Search size={16} strokeWidth={2} />
@@ -226,7 +230,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
               background: "transparent",
               display: "flex",
               alignItems: "center",
-              color: "#999",
+              color: "var(--color-mutedText)",
             }}
           >
             <X size={16} strokeWidth={2} />
@@ -241,14 +245,16 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
             position: "absolute",
             top: "42px",
             left: "0",
-            background: "#fff",
-            border: "1px solid #ccc",
+            background: "var(--color-bg)",
+            border: "1px solid var(--color-border)",
             borderRadius: "4px",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            boxShadow: "var(--node-shadow)",
             zIndex: 10,
             width: "200px",
             maxHeight: "150px",
             overflowY: "auto",
+            color: "var(--color-text)",
+            fontFamily: "var(--font-ui)",
           }}
         >
           {filteredTags.map((tag) => (
@@ -256,16 +262,15 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
               key={tag}
               onClick={() => {
                 handleAddChip(tag);
-                inputRef.current?.focus(); // ✅ Refocus input so Enter will work next
+                inputRef.current?.focus();
               }}
-
               style={{
                 padding: "6px 8px",
                 cursor: "pointer",
                 fontSize: "14px",
                 transition: "background 0.2s",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#f9f9f9")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-panelAlt)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
               {tag}

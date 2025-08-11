@@ -7,6 +7,7 @@ import TextEditor, { type TextEditorRef } from "./components/Editor/TextEditor/T
 import NodeEditModal from "./components/Editor/NodeEditModal/NodeEditModal";
 import type { NodeData } from "./context/storyStore/types";
 import AccessCodeModal from "./components/Payment/AccessCodeModal";
+import { ThemeProvider } from "./context/themeProvider/ThemeProvider";
 
 export default function App() {
   const focusNodeRef = useRef<((nodeId?: string) => void) | null>(null);
@@ -41,6 +42,7 @@ export default function App() {
   }, [editingNode]);
 
   return (
+    <ThemeProvider>
     <div className="app">
       <AccessCodeModal />
 
@@ -87,5 +89,6 @@ export default function App() {
 
       <Footer />
     </div>
+    </ThemeProvider>
   );
 }

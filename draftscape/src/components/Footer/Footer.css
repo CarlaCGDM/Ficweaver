@@ -1,8 +1,10 @@
 .footer {
-  background: #2c2c2c;
-  color: #f0f0f0;
+  background: var(--color-panelAlt);
+  color: var(--color-text);
+  border-top: 1px solid var(--color-border);
   padding: 0.5vh 1vw;
   font-size: 14px;
+  font-family: var(--font-ui);
   display: flex;
   align-items: center;
   justify-content: space-between; /* Left and right stay apart */
@@ -10,6 +12,7 @@
   position: relative;
 }
 
+/* groups */
 .footer-left,
 .footer-center,
 .footer-right {
@@ -17,8 +20,9 @@
   align-items: center;
 }
 
+/* keep center perfectly centered */
 .footer-center {
-  position: absolute; /* Center it absolutely */
+  position: absolute;
   left: 50%;
   transform: translateX(-50%);
 }
@@ -28,25 +32,36 @@
   margin: 0;
 }
 
+/* links: use accent to read well on both modes */
 .footer-center a {
-  color: #f0f0f0;
+  color: var(--color-accent);
   text-decoration: none;
   margin: 0 0.5vw;
 }
 
-.footer-center a:hover {
+.footer-center a:hover,
+.footer-center a:focus-visible {
   text-decoration: underline;
 }
 
+/* donate button: accent + accentText, with safe hover */
 .footer-right .donate-button {
-  background: #ffcc00;
-  border: none;
+  background: var(--color-accent);
+  color: var(--color-accentText);
+  border: 1px solid var(--color-border);
   padding: 1vh 0.8vw;
   border-radius: 4px;
   font-weight: bold;
   cursor: pointer;
+  font-family: var(--font-ui);
 }
 
-.footer-right .donate-button:hover {
-  background: #e6b800;
+.footer-right .donate-button:hover,
+.footer-right .donate-button:focus-visible {
+  filter: brightness(0.92);
+}
+
+/* make any icons inherit theme text color */
+.footer svg {
+  color: var(--color-text);
 }

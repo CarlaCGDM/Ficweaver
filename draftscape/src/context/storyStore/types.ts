@@ -52,7 +52,6 @@ export interface TextNode extends BaseNode {
 export interface PictureNode extends BaseNode {
   type: "picture";
   description: string; // Short label/description of the picture
-  color: string;       // Background color (earth tone)
   connectedTo?: string; // ID of the node it's linked to
 }
 
@@ -90,7 +89,7 @@ export type NodeData =
 export interface Scene {
   id: string;
   title: string;
-  color: string;
+  color: number;
   nodes: NodeData[];
 }
 
@@ -98,7 +97,7 @@ export interface Chapter {
   id: string;
   title: string;
   chapterNode: ChapterNode;
-  color: string;
+  color: number;
   scenes: Scene[];
 }
 

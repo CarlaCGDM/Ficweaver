@@ -5,6 +5,22 @@ import { baseNodeStyle, miniHeaderStyle } from "./nodeStyles";
 import NodeActions from "./NodeActions";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
 import { shiftNodes, collectShiftGroup } from "../../../context/storyStore/helpers";
+import { useTheme } from "../../../context/themeProvider/ThemeProvider";
+
+/** Normalize a palette token to a CSS color:
+ *  - number  -> var(--chapter-color-N)  (N = index+1)
+ *  - string  -> use as-is
+ *  - empty   -> fallback to var(--chapter-color-1)
+ */
+function resolveColor(input?: string | number): string {
+  if (typeof input === "number") return `var(--chapter-color-${input + 1})`;
+  if (typeof input === "string" && input.trim()) return input;
+  return "var(--chapter-color-1)";
+}
+
+// Make a soft tint that also works with CSS vars
+const softTint = (color: string, pct = 30) =>
+  `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 
 export default function TextNode({
   node,
@@ -18,11 +34,18 @@ export default function TextNode({
   onEditNode,
   focusedNodeId,
 }: NodeProps & { focusedNodeId?: string }) {
+  const { stickerBasePath } = useTheme(); // 🎯 get base path from theme provider
   const textNode = node as TextNodeType;
   const sticker = textNode.sticker;
-  const glowColor = chapterColor || "#007BFF";
-  const isFocused = focusedNodeId === node.id;
 
+  // ✅ Resolve tokens (index or string) to CSS colors
+  const resolvedChapterColor = resolveColor(chapterColor as any);
+  const resolvedSceneColor = resolveColor(
+    (sceneColor as any) ?? (chapterColor as any)
+  );
+
+  const glowColor = resolvedChapterColor || "var(--color-accent)";
+  const isFocused = focusedNodeId === node.id;
   const baseStyle = baseNodeStyle(isInDragGroup, glowColor);
 
   const story = useStoryStore((state) => state.story);
@@ -48,9 +71,8 @@ export default function TextNode({
       const prevHeight = prevHeightRef.current;
       const deltaY = height - prevHeight;
 
-      // ✅ Undo/Redo Guard: Skip if reversing a previous shift
+      // ✅ Undo/Redo guard
       if (prevHeight > 0 && deltaY !== 0) {
-        // if it's literally undo or redo of the same change, skip shifting
         if (Math.abs(deltaY) === Math.abs(lastShiftDeltaRef.current)) {
           prevHeightRef.current = height;
           return;
@@ -59,7 +81,7 @@ export default function TextNode({
         // ✅ Perform normal shifting
         const storyCopy = { ...story };
 
-        // 1️⃣ Shift subsequent nodes in the same scene
+        // 1) Shift subsequent nodes in the same scene
         const chapter = storyCopy.chapters.find((ch) => ch.id === parentChapterId);
         if (!chapter) return;
         const scene = chapter.scenes.find((sc) => sc.id === parentSceneId);
@@ -72,14 +94,14 @@ export default function TextNode({
           shiftNodes(storyCopy, group, { x: 0, y: deltaY });
         });
 
-        // 2️⃣ Shift subsequent scenes in the same chapter
+        // 2) Shift subsequent scenes in the same chapter
         const sceneIndex = chapter.scenes.findIndex((sc) => sc.id === parentSceneId);
         chapter.scenes.slice(sceneIndex + 1).forEach((sc) => {
           const group = collectShiftGroup(storyCopy, sc.nodes[0].id);
           shiftNodes(storyCopy, group, { x: 0, y: deltaY });
         });
 
-        // 3️⃣ Shift subsequent chapters
+        // 3) Shift subsequent chapters
         const chapterIndex = storyCopy.chapters.findIndex((ch) => ch.id === parentChapterId);
         storyCopy.chapters.slice(chapterIndex + 1).forEach((subCh) => {
           const group = collectShiftGroup(storyCopy, subCh.chapterNode.id);
@@ -117,7 +139,7 @@ export default function TextNode({
           }}
         >
           <img
-            src={`/stickers/flowers/${String(sticker.imageIndex).padStart(2, "0")}.png`}
+            src={`${stickerBasePath}/${String(sticker.imageIndex).padStart(2, "0")}.png`}
             alt="Sticker"
             style={{
               position: "absolute",
@@ -140,7 +162,7 @@ export default function TextNode({
         style={{
           ...baseStyle,
           position: "absolute",
-          background: isFocused ? "rgb(255, 240, 189)" : "white",
+          background: isFocused ? "var(--color-warningBg)" : "var(--color-bg)",
           borderRadius: "6px",
           top: node.position.y,
           left: node.position.x,
@@ -148,27 +170,28 @@ export default function TextNode({
           padding: "8px",
           transition: "box-shadow 0.25s ease",
           zIndex: 100,
+          border: "1px solid var(--color-border)",
         }}
       >
         <NodeActions nodeId={node.id} onEditNode={onEditNode} />
 
-        {/* Chapter Header */}
+        {/* Chapter Header (solid chapter color, white text) */}
         <div
           style={{
-            ...miniHeaderStyle(chapterColor || "#fdf3d0"),
-            background: chapterColor || "#fdf3d0",
-            color: "white",
+            ...miniHeaderStyle(resolvedChapterColor),
+            background: resolvedChapterColor,
+            color: "#fff",
           }}
         >
           📄 Chapter: {parentChapter?.title || "(Unknown)"}
         </div>
 
-        {/* Scene Header */}
+        {/* Scene Header (tinted scene color, theme text) */}
         <div
           style={{
-            ...miniHeaderStyle(sceneColor || "#e3f2fd"),
-            background: `${sceneColor}44`,
-            color: "#222",
+            ...miniHeaderStyle(resolvedSceneColor),
+            background: softTint(resolvedSceneColor, 35),
+            color: "var(--color-text)",
           }}
         >
           Scene: {parentScene?.title || "(Unknown)"}
@@ -176,14 +199,16 @@ export default function TextNode({
 
         {/* Summary */}
         {textNode.summary && (
-          <div style={{ fontWeight: "bold", marginTop: "4px", marginBottom: "4px" }}>
+          <div
+            style={{ fontWeight: "bold", marginTop: "8px", marginBottom: "4px", color: "var(--color-text)" }}
+          >
             {textNode.summary}
           </div>
         )}
 
         {/* Rich Text Body */}
         <div
-          style={{ fontSize: "12px", marginBottom: "4px", lineHeight: "1.4" }}
+          style={{ fontSize: "12px", marginBottom: "4px", lineHeight: "1.4", color: "var(--color-text)" }}
           dangerouslySetInnerHTML={{
             __html: textNode.text || "<em>(Empty Node)</em>",
           }}
@@ -191,13 +216,13 @@ export default function TextNode({
 
         {/* Tags */}
         {textNode.tags && textNode.tags.length > 0 && (
-          <div style={{ marginTop: "4px", fontSize: "10px", color: "#666" }}>
+          <div style={{ marginTop: "4px", fontSize: "10px", color: "var(--color-mutedText)" }}>
             Tags:{" "}
             {textNode.tags.map((tag, idx) => (
               <span
                 key={idx}
                 style={{
-                  background: "#eee",
+                  background: "var(--color-panelAlt)",
                   padding: "2px 6px",
                   marginRight: "4px",
                   borderRadius: "4px",

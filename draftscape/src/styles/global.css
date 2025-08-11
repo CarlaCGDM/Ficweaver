@@ -1,13 +1,130 @@
-html, body {
+/* globals.css */
+
+/* Base fallbacks (before JS applies vars) */
+:root {
+  --color-bg: #ffffff;
+  --color-panel: #f7f7fb;
+  --color-text: #1f1f29;
+  --color-border: #e5e5ef;
+  --color-accent: #6b5bd8;
+  --color-accentText: #ffffff;
+  --color-warningBg: #fff3cd;
+  --color-warningBorder: #ffeeba;
+  --color-warningText: #856404;
+  --color-nodeConnection: "888";
+
+  --font-ui: Fredoka, sans-serif;
+  --font-display: Fredoka, sans-serif;
+
+  /* Chapter palette placeholders */
+  --chapter-color-1: #766DA7;
+  --chapter-color-2: #15191E;
+  --chapter-color-3: #7A9663;
+  --chapter-color-4: #556842;
+  --chapter-color-5: #A0AE91;
+
+  --grid-line-color: rgba(0, 0, 0, 0.1);
+  /* light mode: faint black */
+
+
+
+  --node-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  /* light mode */
+  --color-mutedText: #777;
+  /* light mode */
+  --color-panelAlt: #e9ebf2;
+}
+
+[data-mode="dark"] {
+  --grid-line-color: rgba(255, 255, 255, 0.05);
+  --annotation-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --node-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  --color-mutedText: #aaa;
+  --color-panelAlt: #21283c;
+}
+
+/* Root defaults */
+html,
+body {
   height: 100%;
   width: 100%;
   margin: 0;
-  font-family: sans-serif;
+  font-family: var(--font-ui);
+  color: var(--color-text);
+  background: var(--color-panel);
   box-sizing: border-box;
-  overflow: hidden; /* keep overflow hidden here */
-  /* ✅ remove position: fixed to allow independent scroll areas to behave properly */
+  overflow: hidden;
 }
 
+/* Apply theme text color to most text elements by default */
+p,
+span,
+li,
+label,
+button,
+input,
+textarea,
+select,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--color-text);
+  font-family: var(--font-ui);
+}
+
+
+
+/* Buttons */
+button {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Inputs, Textareas, Selects */
+input,
+textarea,
+select {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text);
+  opacity: 0.6;
+  /* muted */
+}
+
+/* Scrollbars - theme aware (Webkit) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+/* Layout Containers */
 .app {
   display: flex;
   flex-direction: column;
@@ -16,15 +133,15 @@ html, body {
 
 .main-layout {
   display: flex;
-  height: 100vh; /* fixed height container below top toolbar */
-  overflow: hidden; /* prevent global scrollbars */
+  height: 100vh;
+  overflow: hidden;
 }
 
 .outline-panel {
-  border-right: 1px solid #ccc;
+  border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--color-panel);
   flex: 1;
   overflow-y: auto;
   overscroll-behavior: none;
@@ -32,40 +149,35 @@ html, body {
 
 .outline-panel .scroll-container {
   flex: 1;
-  overflow-y: auto; /* ✅ this is now the scrolling area */
+  overflow-y: auto;
 }
 
 .canvas-container {
-  /* was: width: 50vw; flex-shrink: 0; */
-  flex: 0 0 50vw;     /* base: 50% viewport width */
+  flex: 0 0 50vw;
   overflow: hidden;
   position: relative;
 }
 
-/* When the editor is hidden, let canvas consume all remaining space */
 .canvas-container.editor-expanded {
-  flex: 1 1 auto;     /* grow to fill everything after the outliner */
+  flex: 1 1 auto;
 }
 
 .text-editor {
   flex: 1;
   overflow-y: auto;
   padding-right: 10px;
-   overflow-y: auto;
   overscroll-behavior: none;
 }
 
-/* Simple chevron that sits at the right edge of the canvas */
 .toggle-editor {
   align-self: stretch;
   width: 16px;
   border: none;
-  background: #f3f3f3;
+  background: var(--color-panelAlt);
   cursor: pointer;
   font-size: 16px;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* visually sit between canvas and editor */
 }

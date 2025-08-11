@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { NodeData } from "../../../context/storyStore/types";
 import ChapterNode from "./ChapterNode";
 import SceneNode from "./SceneNode";
@@ -11,8 +10,11 @@ export interface NodeProps {
   node: NodeData;
   parentChapterId?: string;
   parentSceneId?: string;
-  chapterColor?: string;
-  sceneColor?: string;
+
+  // Accept either a numeric palette index or a custom string color
+  chapterColor?: number | string;
+  sceneColor?: number | string;
+
   isDragging: boolean;
   isInDragGroup: boolean;
   onMouseDown: (e: React.MouseEvent, nodeId: string, x: number, y: number) => void;
@@ -43,7 +45,7 @@ export default function Node(props: NodeProps) {
       return <PictureNode {...commonProps} />;
     case "annotation":
       return <AnnotationNode {...commonProps} />;
-    case "event": // ✅ NEW
+    case "event":
       return <EventNode {...commonProps} />;
     default:
       return null;

@@ -1,20 +1,25 @@
 import type { CSSProperties } from "react";
 
+/* Container that wraps the editor column */
 export const editorContainer: CSSProperties = {
   overflowY: "auto",
   height: "100%",
   padding: "16px",
-  fontFamily: "sans-serif",
+  fontFamily: "var(--font-ui)",
+  color: "var(--color-text)",
   lineHeight: "1.5",
-  borderLeft: "1px solid #ddd",
+  borderLeft: "1px solid var(--color-border)",
+  background: "var(--color-bg)",
 };
 
+/* Word count / meta line */
 export const totalWordsStyle: CSSProperties = {
   fontSize: "12px",
-  color: "#666",
+  color: "var(--color-mutedText)",
   marginBottom: "12px",
 };
 
+/* Clickable chapter title row */
 export const chapterTitleStyle = (color: string, isHovered: boolean): CSSProperties => ({
   marginBottom: "8px",
   background: isHovered ? `${color}22` : "transparent",
@@ -22,23 +27,27 @@ export const chapterTitleStyle = (color: string, isHovered: boolean): CSSPropert
   borderRadius: "6px",
   cursor: "pointer",
   transition: "background 0.25s ease",
+  color: "var(--color-text)",
 });
 
+/* Small muted summary line shown on hover */
 export const hoverSummaryStyle = (): CSSProperties => ({
   fontSize: "12px",
-  color: "#777",
+  color: "var(--color-mutedText)",
   marginTop: "4px",
   opacity: 1,
   transition: "opacity 0.25s ease",
 });
 
+/* Divider text between scenes */
 export const sceneSeparatorStyle: CSSProperties = {
   textAlign: "center",
-  color: "#bbb",
+  color: "var(--color-mutedText)",
   fontSize: "10px",
   margin: "8px 0",
 };
 
+/* The text block container (reacts to various hover states) */
 export const textContainerStyle = (
   color: string,
   isHoveredText: boolean,
@@ -57,8 +66,10 @@ export const textContainerStyle = (
     : "transparent",
   transition: "background 0.25s ease",
   position: "relative",
+  color: "var(--color-text)",
 });
 
+/* The vertical accent line to the left of a text block */
 export const verticalLineStyle = (color: string, active: boolean): CSSProperties => ({
   width: "4px",
   background: active ? color : "transparent",
@@ -67,17 +78,18 @@ export const verticalLineStyle = (color: string, active: boolean): CSSProperties
   transition: "background 0.25s ease",
 });
 
+/* The hover popover with controls/summary */
 export const hoverOverlayStyle = (color: string): CSSProperties => ({
   position: "absolute",
   top: "-70px",
   right: "-10px",
-  background: "rgba(255,255,255,0.95)",
+  background: "var(--color-panel)",            // was rgba(255,255,255,0.95)
   border: `1px solid ${color}55`,
   borderRadius: "4px",
   padding: "4px 6px",
   fontSize: "11px",
-  color: "#444",
-  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+  color: "var(--color-text)",
+  boxShadow: "var(--node-shadow)",
   opacity: 1,
   transform: "translateY(5px)",
   animation: "fadeSlideUp 0.25s ease forwards",

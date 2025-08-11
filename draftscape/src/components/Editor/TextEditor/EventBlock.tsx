@@ -8,7 +8,7 @@ interface EventBlockProps {
     setHoveredId: (id: string | null) => void;
     setHoveredDetails: (details: any) => void;
     nodeRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
-    searchQuery?: string; // already present
+    searchQuery?: string;
 }
 
 export default function EventBlock({
@@ -29,15 +29,19 @@ export default function EventBlock({
         .filter(Boolean)
         .join(" / ");
 
+    const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
     const applyHighlights = (text: string, query?: string) => {
         if (!query?.trim()) return text;
         const terms = query.split(/\s+/).filter(Boolean);
         if (terms.length === 0) return text;
         const regex = new RegExp(`(${terms.map((t) => escapeRegExp(t)).join("|")})`, "gi");
-        return text.replace(regex, (m) => `<span style="background-color: yellow;">${m}</span>`);
+        return text.replace(
+            regex,
+            (m) =>
+                `<span style="background-color: var(--color-warningBg); color: var(--color-text);">${m}</span>`
+        );
     };
-
-    const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
     return (
         <div
@@ -51,7 +55,7 @@ export default function EventBlock({
                 cursor: "pointer",
                 borderRadius: "4px",
                 transition: "background 0.2s ease",
-                background: isHovered ? "#f6f6f6" : "transparent",
+                background: isHovered ? "var(--color-panelAlt)" : "transparent",
             }}
             onClick={() => onFocusNode(event.id)}
             onMouseEnter={() => {
@@ -76,16 +80,17 @@ export default function EventBlock({
                     fontWeight: "500",
                 }}
             >
-                <div style={{ color: "#666", whiteSpace: "nowrap" }}>
+                <div style={{ color: "var(--color-mutedText)", whiteSpace: "nowrap" }}>
                     {timestamp || "Unknown date"}
                 </div>
-                <span style={{ margin: "0 4px" }}>—</span>
+                <span style={{ margin: "0 4px", color: "var(--color-mutedText)" }}>—</span>
                 <div
                     style={{
                         flex: 1,
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
+                        color: "var(--color-text)",
                     }}
                     dangerouslySetInnerHTML={{
                         __html: applyHighlights(event.title || "(Untitled Event)", searchQuery),
@@ -93,9 +98,8 @@ export default function EventBlock({
                 />
             </div>
 
-            {/* Only show extra details on hover */}
             {isHovered && (
-                <div style={{ marginTop: "4px", fontSize: "11px", color: "#666" }}>
+                <div style={{ marginTop: "4px", fontSize: "11px", color: "var(--color-mutedText)" }}>
                     {event.description && (
                         <div
                             style={{
@@ -103,7 +107,6 @@ export default function EventBlock({
                                 fontStyle: "italic",
                                 overflow: "hidden",
                             }}
-                            // ✅ Render rich HTML
                             dangerouslySetInnerHTML={{ __html: event.description }}
                         />
                     )}
@@ -114,7 +117,8 @@ export default function EventBlock({
                                 <span
                                     key={idx}
                                     style={{
-                                        background: "#eee",
+                                        background: "var(--color-panel)",
+                                        color: "var(--color-text)",
                                         padding: "2px 6px",
                                         marginRight: "4px",
                                         borderRadius: "4px",
@@ -128,7 +132,6 @@ export default function EventBlock({
                     )}
                 </div>
             )}
-
         </div>
     );
 }

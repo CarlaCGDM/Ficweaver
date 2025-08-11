@@ -46,26 +46,31 @@ const formGroupStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   fontWeight: 500,
   fontSize: "13px",
-  color: "#444",
+  color: "var(--color-text)",
+  fontFamily: "var(--font-ui)",
 };
 
 const inputStyle: React.CSSProperties = {
   padding: "6px 8px",
   borderRadius: "6px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--color-border)",
   fontSize: "13px",
   outline: "none",
   transition: "border 0.2s, box-shadow 0.2s",
+  fontFamily: "var(--font-ui)",
+  background: "var(--color-panel)",
+  color: "var(--color-text)",
 } as const;
 
 const chipStyle: React.CSSProperties = {
-  background: "#eee",
+  background: "var(--color-panelAlt)",
   padding: "2px 6px",
   borderRadius: "12px",
   fontSize: "12px",
   display: "flex",
   alignItems: "center",
   gap: "4px",
+  color: "var(--color-text)",
 };
 
 export function NodeFormFields({
@@ -319,21 +324,13 @@ export function NodeFormFields({
               border: "1px solid #ccc",
               borderRadius: "6px",
               padding: "4px",
-              background: "#fff",
+              background: "var(--color-panel)",
             }}
           >
             {tags.map((tag) => (
               <span
                 key={tag}
-                style={{
-                  background: "#f2f2f2",
-                  padding: "2px 6px",
-                  marginRight: "4px",
-                  borderRadius: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                  fontSize: "13px",
-                }}
+                style={chipStyle}
               >
                 [{tag}]
                 <button

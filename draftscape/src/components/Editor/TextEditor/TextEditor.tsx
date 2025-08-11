@@ -242,7 +242,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
               100% { opacity: 1; transform: translateY(0); }
             }
             .focused-highlight {
-              background-color: rgb(255, 240, 189) !important;
+              background-color: var(--color-warningBg) !important;
               transition: background-color 0.3s ease;
             }
           `}

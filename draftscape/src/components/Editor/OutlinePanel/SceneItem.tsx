@@ -8,13 +8,31 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 interface SceneItemProps {
   scene: Scene;
   chapterId: string;
-  chapterColor: string;
+  chapterColor: string; // normalized string (e.g. "var(--chapter-color-1)")
   focusedNodeId?: string;
   onFocusNode: (nodeId: string) => void;
   onEditNode: (node: NodeData) => void;
   showActionButtons: boolean;
   isOpen: boolean;
   nodeRefs: React.MutableRefObject<Record<string, HTMLLIElement | null>>;
+}
+
+// normalize scene.color -> string (supports legacy numeric index)
+function resolveSceneColor(scene: Scene, chapterColor: string): string {
+  const anyScene = scene as any;
+  if (typeof anyScene.color === "number") {
+    return `var(--chapter-color-${anyScene.color + 1})`;
+  }
+  if (typeof anyScene.color === "string" && anyScene.color.length > 0) {
+    return anyScene.color;
+  }
+  return chapterColor;
+}
+
+// make a soft background from a color or CSS var (works w/ var(...) and hex)
+function softBg(color: string, pct = 80): string {
+  // 80% of color mixed with 20% transparent ≈ 0.8 alpha look
+  return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 }
 
 export default function SceneItem({
@@ -35,12 +53,11 @@ export default function SceneItem({
   const [collapsed, setCollapsed] = useState(true);
 
   useEffect(() => {
-    if (isOpen) setCollapsed(false);
-    else setCollapsed(true);
+    setCollapsed(!isOpen);
   }, [isOpen]);
 
   const sceneNode = scene.nodes.find((n) => n.type === "scene");
-  const isFocused = sceneNode && focusedNodeId === sceneNode.id;
+  const isFocused = !!sceneNode && focusedNodeId === sceneNode.id;
 
   useEffect(() => {
     if (!focusedNodeId) return;
@@ -50,6 +67,9 @@ export default function SceneItem({
       scene.nodes.some((n) => n.id === focusedNodeId);
     setCollapsed(!containsFocusedNode);
   }, [focusedNodeId, scene.id, sceneNode, scene.nodes]);
+
+  const sceneColor = resolveSceneColor(scene, chapterColor);
+  const headerBase = sceneHeaderStyle(sceneColor);
 
   return (
     <li
@@ -63,8 +83,10 @@ export default function SceneItem({
     >
       <div
         style={{
-          ...sceneHeaderStyle(scene.color || chapterColor),
-          background: isFocused ? "rgb(238, 172, 73)" : sceneHeaderStyle(scene.color || chapterColor).background,
+          ...headerBase,
+          // override background to be a diluted version of the scene color
+          background: isFocused ? "var(--color-warningBg)" : softBg(sceneColor, 40),
+          color: isFocused ? "var(--color-text)" : "#fff",
         }}
         onClick={() => sceneNode && onFocusNode(sceneNode.id)}
       >
@@ -97,7 +119,7 @@ export default function SceneItem({
               <TextItem
                 key={txt.id}
                 textNode={txt}
-                color={scene.color || chapterColor}
+                color={sceneColor} // pass the normalized string color
                 focusedNodeId={focusedNodeId}
                 onFocusNode={onFocusNode}
               />

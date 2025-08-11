@@ -1,5 +1,6 @@
 import type { TextNode, Scene, Chapter } from "../../../context/storyStore/types";
 import { verticalLineStyle, textContainerStyle, hoverOverlayStyle } from "./textEditorStyles";
+import { useTheme } from "../../../context/themeProvider/ThemeProvider";
 
 interface TextNodeBlockProps {
   textNode: TextNode;
@@ -36,6 +37,19 @@ export default function TextNodeBlock({
   focusedSceneId,
   searchQuery = "",
 }: TextNodeBlockProps) {
+  // ✅ Resolve chapter color from theme
+  const { theme, mode } = useTheme();
+  const palette: string[] = theme.chapterColors?.[mode] ?? [];
+  const colorIndexFromModel = (() => {
+    const anyCh = chapter as any;
+    if (typeof anyCh.colorIndex === "number") return anyCh.colorIndex;
+    if (typeof chapter.color === "number") return chapter.color as number;
+    return 0;
+  })();
+  const chapterColor: string =
+    palette[colorIndexFromModel] ??
+    `var(--chapter-color-${colorIndexFromModel + 1})`;
+
   // ✅ Word count from plain text
   const plainText = textNode.text.replace(/<[^>]+>/g, "");
   const wordCount = plainText.split(/\s+/).filter(Boolean).length;
@@ -50,17 +64,25 @@ export default function TextNodeBlock({
   const isSceneFocused = focusedSceneId === scene.id && focusedNodeId?.startsWith("scene-");
   const isFocusedSibling = isSceneFocused && focusedNodeId !== textNode.id;
 
-  // ✅ Apply highlights directly to HTML
+  // ✅ Safe highlight insert using theme warning colors
+  const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const applyHighlightsToHTML = (html: string, query: string) => {
     if (!query.trim()) return html;
-    const terms = query.split(/\s+/).filter(Boolean);
+    const terms = query.split(/\s+/).filter(Boolean).map(escapeRegExp);
+    if (terms.length === 0) return html;
     const regex = new RegExp(`(${terms.join("|")})`, "gi");
-    return html.replace(regex, (match) => `<span style="background-color: yellow;">${match}</span>`);
+    return html.replace(
+      regex,
+      (match) =>
+        `<span style="background-color: var(--color-warningBg); color: var(--color-text);">${match}</span>`
+    );
   };
 
   return (
     <div
-      ref={(el) => { nodeRefs.current[textNode.id] = el; }}
+      ref={(el) => {
+        nodeRefs.current[textNode.id] = el;
+      }}
       className={`text-node ${isFocusedText || isFocusedSibling ? "focused-highlight" : ""}`}
       style={{ marginBottom: "12px", display: "flex", cursor: "pointer" }}
       onClick={() => onFocusNode(textNode.id)}
@@ -85,7 +107,7 @@ export default function TextNodeBlock({
       {/* ✅ Left vertical line only for hover */}
       <div
         style={verticalLineStyle(
-          chapter.color,
+          chapterColor,
           isHoveredText || isHoveredSibling || isChapterHover
         )}
       />
@@ -94,7 +116,7 @@ export default function TextNodeBlock({
       <div
         style={{
           ...textContainerStyle(
-            chapter.color,
+            chapterColor,
             isHoveredText,
             isHoveredSibling,
             hoveredChapterId === chapter.id
@@ -103,7 +125,7 @@ export default function TextNodeBlock({
       >
         {/* ✅ Hover overlay */}
         {isHoveredText && (
-          <div style={hoverOverlayStyle(chapter.color)}>
+          <div style={hoverOverlayStyle(chapterColor)}>
             <div><strong>Scene:</strong> {scene.title}</div>
             <div><strong>Summary:</strong> {textNode.summary || "(No summary)"}</div>
             <div><strong>Words:</strong> {wordCount}</div>
@@ -114,7 +136,8 @@ export default function TextNodeBlock({
                   <span
                     key={idx}
                     style={{
-                      background: "#eee",
+                      background: "var(--color-panelAlt)",
+                      color: "var(--color-text)",
                       padding: "2px 6px",
                       marginRight: "4px",
                       borderRadius: "4px",
@@ -134,7 +157,7 @@ export default function TextNodeBlock({
           style={{
             margin: 0,
             fontSize: "14px",
-            color: "#333",
+            color: "var(--color-text)",
             lineHeight: "1.4",
           }}
           dangerouslySetInnerHTML={{

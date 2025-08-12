@@ -1,45 +1,48 @@
 import type { NodeProps } from "./Node";
-import type { ChapterNode as ChapterNodeType } from "../../../context/storyStore/types";
+import type { ChapterNode as ChapterNodeType, NodeData } from "../../../context/storyStore/types";
 import { baseNodeStyle, headerStyle } from "./nodeStyles";
 import NodeActions from "./NodeActions";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
 
-/** Normalize chapter color:
- *  - number  -> var(--chapter-color-N)  (N = index+1)
- *  - string  -> use as-is
- *  - empty   -> fallback to var(--chapter-color-1)
- */
+/** Normalize chapter color */
 function resolveChapterColor(input?: string | number): string {
   if (typeof input === "number") return `var(--chapter-color-${input + 1})`;
   if (typeof input === "string" && input.trim()) return input;
   return "var(--chapter-color-1)";
 }
 
-// Make a soft tint that also works with CSS vars
+// Make a soft tint that works with CSS vars
 const softTint = (color: string, pct = 20) =>
   `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 
-export default function ChapterNode({ ...props }: NodeProps & { focusedNodeId?: string; chapterIndex?: number }) {
-  const { node, chapterColor, isDragging, isInDragGroup, onMouseDown, onEditNode, chapterIndex, focusedNodeId } = props;
+export default function ChapterNode({
+  node,
+  chapterColor,
+  isDragging,
+  isInDragGroup,
+  onMouseDown,
+  onEditNode,
+  chapterIndex,
+  focusedNodeId,
+}: NodeProps & { focusedNodeId?: string; chapterIndex?: number }) {
   const chapterNode = node as ChapterNodeType;
-
   const resolvedChapterColor = resolveChapterColor(chapterColor);
   const glowColor = resolvedChapterColor || "var(--color-accent)";
   const isFocused = focusedNodeId === node.id;
   const baseStyle = baseNodeStyle(isInDragGroup, glowColor);
 
-  // ✅ Access story to locate connected media
+  // ✅ Access story and get children from flat structure
   const story = useStoryStore((state) => state.story);
-  const parentChapter = story.chapters.find((ch) => ch.chapterNode.id === node.id);
 
-  const attachedMedia =
-    parentChapter?.scenes.flatMap((sc) =>
-      sc.nodes.filter(
-        (n) =>
-          (n.type === "picture" || n.type === "annotation" || n.type === "event") &&
-          n.connectedTo === node.id
-      )
-    ) || [];
+  // Children of this chapter (scenes, media, etc.)
+  const childIds = story.childrenOrder[node.id] ?? [];
+  const attachedMedia = childIds
+    .map((id) => story.nodeMap[id])
+    .filter(
+      (n): n is NodeData =>
+        !!n &&
+        (n.type === "picture" || n.type === "annotation" || n.type === "event")
+    );
 
   return (
     <>
@@ -58,13 +61,13 @@ export default function ChapterNode({ ...props }: NodeProps & { focusedNodeId?: 
           position: "absolute",
         }}
       >
-        {/* Subtle color wash behind content */}
+        {/* Subtle color wash */}
         {!isFocused && (
           <div
             style={{
               position: "absolute",
               inset: 0,
-              background: softTint(resolvedChapterColor, 20), // ~20% tint of chapter color
+              background: softTint(resolvedChapterColor, 20),
               pointerEvents: "none",
               borderRadius: "6px",
               zIndex: 0,
@@ -84,7 +87,7 @@ export default function ChapterNode({ ...props }: NodeProps & { focusedNodeId?: 
           📘 Chapter {chapterIndex !== undefined ? chapterIndex + 1 : "?"}
         </div>
 
-        <div style={{ padding: "8px", position: "relative", zIndex: 1 }}>
+        <div style={{ padding: "14px 8px", position: "relative", zIndex: 1 }}>
           <div style={{ fontWeight: "bold", marginBottom: "4px" }}>{chapterNode.title}</div>
           {chapterNode.description && (
             <div style={{ fontSize: "12px", color: "var(--color-text)" }}>
@@ -94,7 +97,7 @@ export default function ChapterNode({ ...props }: NodeProps & { focusedNodeId?: 
         </div>
       </div>
 
-      {/* ✅ Render Attached Media */}
+      {/* ✅ Render attached media nodes */}
       {attachedMedia.map((media) => (
         <div
           key={media.id}

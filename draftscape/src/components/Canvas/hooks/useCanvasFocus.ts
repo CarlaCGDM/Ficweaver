@@ -1,3 +1,4 @@
+// useCanvasFocus.ts
 import type { Story, NodeData } from "../../../context/storyStore/types";
 
 export function useCanvasFocus(transformRef: any, story: Story) {
@@ -42,29 +43,19 @@ export function useCanvasFocus(transformRef: any, story: Story) {
     const targetX = vw / 2 - nodeCenterX;
     const targetY = vh / 2 - nodeCenterY;
 
+    // keep your easing/duration contract
     transformRef.current.setTransform(targetX, targetY, scale, 200, "easeOut");
   };
 
   const focusNode = (nodeId?: string) => {
-    if (!nodeId) {
-      resetView();
-      return;
-    }
+    if (!nodeId) return resetView();
+    const node = story.nodeMap[nodeId];
+    if (!node) return;
 
-    for (const ch of story.chapters) {
-      if (ch.chapterNode.id === nodeId) {
-        centerOnPosition(ch.chapterNode.position, ch.chapterNode.type, ch.chapterNode.id);
-        return;
-      }
-      for (const sc of ch.scenes) {
-        for (const n of sc.nodes) {
-          if (n.id === nodeId) {
-            centerOnPosition(n.position, n.type, n.id);
-            return;
-          }
-        }
-      }
-    }
+    // try now
+    centerOnPosition(node.position, node.type, node.id);
+    // try once after paint to catch freshly-mounted DOM
+    requestAnimationFrame(() => centerOnPosition(node.position, node.type, node.id));
   };
 
   return { focusNode, resetView };

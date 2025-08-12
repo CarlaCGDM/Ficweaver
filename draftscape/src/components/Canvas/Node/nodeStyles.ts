@@ -21,9 +21,9 @@ export const baseNodeStyle = (
 export const headerStyle = (color: string): CSSProperties => ({
   background: color,
   color: "white",
-  fontSize: "12px",
+  fontSize: "16px",
   fontWeight: "bold",
-  padding: "4px 6px",
+  padding: "10px 6px",
   borderTopLeftRadius: "6px",
   borderTopRightRadius: "6px",
 });
@@ -32,8 +32,8 @@ export const headerStyle = (color: string): CSSProperties => ({
 export const miniHeaderStyle = (color: string): CSSProperties => ({
   background: color,
   color: "var(--color-text)",
-  fontSize: "10px",
-  padding: "2px 4px",
+  fontSize: "14px",
+  padding: "6px 4px",
   borderRadius: "3px",
   marginBottom: "4px",
 });

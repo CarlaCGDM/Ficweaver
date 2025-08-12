@@ -13,7 +13,6 @@ export interface NodeProps {
 
   // Accept either a numeric palette index or a custom string color
   chapterColor?: number | string;
-  sceneColor?: number | string;
 
   isDragging: boolean;
   isInDragGroup: boolean;

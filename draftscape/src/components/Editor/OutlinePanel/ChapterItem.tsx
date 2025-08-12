@@ -1,12 +1,13 @@
 import { buttonRowStyle, chapterHeaderStyle, pinButtonStyle } from "./outlinePanelStyles";
 import SceneItem from "./SceneItem";
-import type { NodeData, Chapter } from "../../../context/storyStore/types";
+import type { NodeData, ChapterNode, SceneNode } from "../../../context/storyStore/types";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
+import { useTheme } from "../../../context/themeProvider/ThemeProvider";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface ChapterItemProps {
-  chapter: Chapter;
-  chapterIndex: number;
+  chapter: ChapterNode;
+  chapterIndex: number; // ✅ index from story.order
   focusedNodeId?: string;
   onFocusNode: (nodeId: string) => void;
   onEditNode: (node: NodeData) => void;
@@ -17,20 +18,9 @@ interface ChapterItemProps {
   nodeRefs: React.MutableRefObject<Record<string, HTMLLIElement | null>>;
 }
 
-// Normalize chapter color (handles legacy numeric color or new string)
-function resolveChapterColor(chapter: Chapter): string {
-  const anyCh = chapter as any;
-  if (typeof anyCh.colorIndex === "number") {
-    return `var(--chapter-color-${anyCh.colorIndex + 1})`;
-  }
-  if (typeof chapter.color === "number") {
-    return `var(--chapter-color-${(chapter.color as number) + 1})`;
-  }
-  return (chapter.color as string) ?? `var(--chapter-color-1)`;
-}
-
 export default function ChapterItem({
   chapter,
+  chapterIndex,
   focusedNodeId,
   onFocusNode,
   onEditNode,
@@ -40,32 +30,40 @@ export default function ChapterItem({
   openScenes,
   nodeRefs,
 }: ChapterItemProps) {
-  const addScene = useStoryStore((state) => state.addScene);
-  const addChapter = useStoryStore((state) => state.addChapter);
-  const deleteNode = useStoryStore((state) => state.deleteNode);
+  const createScene = useStoryStore((state) => state.createScene);
+  const createChapter = useStoryStore((state) => state.createChapter);
+  const deleteChapter = useStoryStore((state) => state.deleteChapter);
+  const story = useStoryStore((state) => state.story);
 
-  const isFocused = focusedNodeId === chapter.chapterNode.id;
-  const chapterColor = resolveChapterColor(chapter);
+  const { theme, mode } = useTheme(); // ✅ get theme + mode
 
-  // Precompute header base style
+  // Pick color from theme’s chapterColors by chapterIndex
+  const chapterColor =
+    theme.chapterColors[mode][chapterIndex % theme.chapterColors[mode].length];
+
+  const isFocused = focusedNodeId === chapter.id;
   const headerBase = chapterHeaderStyle(chapterColor);
+
+  // Get scene nodes for this chapter
+  const sceneIds = story.childrenOrder[chapter.id] ?? [];
+  const scenes = sceneIds
+    .map((id) => story.nodeMap[id])
+    .filter((n): n is SceneNode => !!n && n.type === "scene");
 
   return (
     <li
       ref={(el) => {
-        nodeRefs.current[chapter.chapterNode.id] = el;
+        nodeRefs.current[chapter.id] = el;
       }}
       style={{ marginBottom: "6px" }}
     >
-      {/* Chapter Header */}
       <div
         style={{
           ...headerBase,
           background: isFocused ? "var(--color-warningBg)" : headerBase.background,
-          // keep the text readable on warning background
           color: isFocused ? "var(--color-text)" : headerBase.color,
         }}
-        onClick={() => onFocusNode(chapter.chapterNode.id)}
+        onClick={() => onFocusNode(chapter.id)}
       >
         <button
           style={pinButtonStyle}
@@ -76,31 +74,33 @@ export default function ChapterItem({
         >
           {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </button>
-        <span style={{ cursor: "pointer", flex: 1 }}>📘 {chapter.chapterNode.title}</span>
+        <span style={{ cursor: "pointer", flex: 1 }}>📘 {chapter.title}</span>
       </div>
 
       {showActionButtons && (
         <div style={buttonRowStyle}>
-          <button onClick={() => onEditNode(chapter.chapterNode)}>✏️</button>
-          <button style={{ color: "red" }} onClick={() => deleteNode(chapter.chapterNode.id)}>🗑️</button>
-          <button onClick={() => addScene(chapter.id, chapter.chapterNode.id)}>+ Scene After</button>
-          {!chapter.scenes.length && <button onClick={() => addChapter(chapter.chapterNode.id)}>+ Chapter After</button>}
+          <button onClick={() => onEditNode(chapter)}>✏️</button>
+          <button style={{ color: "red" }} onClick={() => deleteChapter(chapter.id)}>🗑️</button>
+          <button onClick={() => createScene(chapter.id, "New Scene")}>+ Scene After</button>
+          {!sceneIds.length && (
+            <button onClick={() => createChapter("New Chapter", chapter.id)}>+ Chapter After</button>
+          )}
         </div>
       )}
 
       {isOpen && (
         <ul style={{ listStyle: "none", margin: "4px 0 0 12px", padding: 0 }}>
-          {chapter.scenes.map((sc) => (
+          {scenes.map((scene) => (
             <SceneItem
-              key={sc.id}
-              scene={sc}
+              key={scene.id}
+              scene={scene}
               chapterId={chapter.id}
-              chapterColor={chapterColor}         
+              chapterColor={chapterColor}
               focusedNodeId={focusedNodeId}
               onFocusNode={onFocusNode}
               onEditNode={onEditNode}
               showActionButtons={showActionButtons}
-              isOpen={openScenes[sc.id] === true}
+              isOpen={openScenes[scene.id] === true}
               nodeRefs={nodeRefs}
             />
           ))}

@@ -1,3 +1,4 @@
+// src/components/Canvas/hooks/useCanvasDrag.ts
 import { useEffect, useRef } from "react";
 import type { Story, NodeData } from "../../../context/storyStore/types";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
@@ -7,17 +8,15 @@ export function useCanvasDrag(
   zoomScale: number,
   draggingNodeId: string | null,
   draggingGroup: string[] | null,
-  updateNodePosition: (nodeId: string, pos: { x: number; y: number }, isFromDrag?: boolean) => void,
+  updateNodePosition: (id: string, pos: { x: number; y: number }, isFromDrag?: boolean) => void,
   findNodeById: (id: string) => NodeData | null,
   clearDragState?: () => void
 ) {
-  const historyCapturedRef = useRef(false); // ✅ Track if pre-drag snapshot is taken
+  const historyCapturedRef = useRef(false);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!draggingNodeId || !draggingGroup) return;
-
-      // ✅ Save pre-drag state ONCE
       if (!historyCapturedRef.current) {
         useStoryStore.getState().pushHistory();
         historyCapturedRef.current = true;
@@ -26,23 +25,19 @@ export function useCanvasDrag(
       const deltaX = e.movementX / zoomScale;
       const deltaY = e.movementY / zoomScale;
 
-      draggingGroup.forEach((nodeId) => {
-        const node = findNodeById(nodeId);
-        if (node) {
-          updateNodePosition(
-            nodeId,
-            { x: node.position.x + deltaX, y: node.position.y + deltaY },
-            true // ✅ Prevent extra history saves
-          );
-        }
-      });
+      // batched updates
+      const updates: Array<{ id: string; x: number; y: number }> = [];
+      for (const id of draggingGroup) {
+        const n = findNodeById(id);
+        if (!n) continue;
+        updates.push({ id, x: n.position.x + deltaX, y: n.position.y + deltaY });
+      }
+      useStoryStore.getState().updateManyNodePositions(updates, true);
     };
 
     const handleMouseUp = () => {
-      // ✅ Reset tracking (no post-drag save)
       historyCapturedRef.current = false;
       clearDragState?.();
-
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
@@ -51,10 +46,9 @@ export function useCanvasDrag(
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     }
-
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [zoomScale, draggingNodeId, draggingGroup, updateNodePosition, findNodeById, clearDragState]);
+  }, [zoomScale, draggingNodeId, draggingGroup, findNodeById, clearDragState]);
 }

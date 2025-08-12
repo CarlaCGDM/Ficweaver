@@ -76,13 +76,13 @@ export default function App() {
         </button>
 
         {/* Only render the editor when visible */}
-        {isEditorVisible && (
+        {/* {isEditorVisible && (
           <TextEditor
             ref={textEditorRef}
             onFocusNode={handleFocusNode}
             focusedNodeId={focusedNodeId || undefined}
           />
-        )}
+        )} */}
       </div>
 
       {editingNode && <NodeEditModal node={editingNode} onClose={() => setEditingNode(null)} />}

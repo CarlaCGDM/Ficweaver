@@ -1,20 +1,35 @@
+// src/context/storyStore/storyStore.ts
 import { create, type StateCreator } from "zustand";
-import { persist, createJSONStorage, type PersistOptions } from "zustand/middleware";
-import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval"; // ✅ IndexedDB wrapper with renamed methods
+import { persist, createJSONStorage } from "zustand/middleware";
+import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
+
 import { undoRedoActions } from "./actions/undoRedo";
 import { storyTitleActions } from "./actions/storyTitle";
-import { nodeUpdateActions } from "./actions/nodeUpdate";
-import { nodeCrudActions } from "./actions/nodeCreateDelete";
-import { mediaActions } from "./actions/mediaActions";
-import { chronologyActions } from "./actions/chronologyActions";
-import { useImageStore } from "../imageStore/imageStore";
+import { genericNodeActions } from "./actions/genericNodeActions";
 
+// ✅ new flat-structure CRUD slices
+import { chapterActions } from "./actions/chapterActions";
+import { sceneActions } from "./actions/sceneActions";
+import { textActions } from "./actions/textActions";
+
+// Reparenting
+
+import { moveNodeActions } from "./actions/moveNodeActions";
+
+// Media 
+import { pictureActions } from "./actions/pictureActions";
+import { eventActions } from "./actions/eventActions";
+import { annotationActions } from "./actions/annotationActions";
+
+import { useImageStore } from "../imageStore/imageStore";
 import type { StoryState } from "./types";
 
-// ✅ Create a blank story
+// ✅ Create a blank story in the NEW flat shape
 export const createBlankStory = (): StoryState["story"] => ({
   title: "Untitled Story",
-  chapters: [],
+  nodeMap: {},        // all nodes live here
+  order: [],          // ordered list of top-level chapter IDs
+  childrenOrder: {},  // parentId -> ordered child IDs
 });
 
 type StoreWithExtras = StoryState & {
@@ -38,12 +53,24 @@ export const useStoryStore = create<StoreWithExtras>()(
     ((set, get) => ({
       story: createBlankStory(),
       selectedNodeId: null,
+
+      // History + misc
       ...undoRedoActions(set, get),
       ...storyTitleActions(set, get),
-      ...nodeUpdateActions(set, get),
-      ...nodeCrudActions(set, get),
-      ...mediaActions(set, get),
-      ...chronologyActions(set, get),
+      ...genericNodeActions(set,get),
+
+      // ✅ New CRUD (flat)
+      ...chapterActions(set as any, get as any),
+      ...sceneActions(set as any, get as any),
+      ...textActions(set as any, get as any),
+
+      // Media
+      ...pictureActions(set as any, get as any),
+      ...eventActions(set as any, get as any),
+      ...annotationActions(set as any, get as any),
+
+      // Reparenting
+      ...moveNodeActions(set as any, get as any), 
 
       resetStory: () => {
         const store = get();
@@ -70,6 +97,8 @@ export const useStoryStore = create<StoreWithExtras>()(
         idbSet("draftscape-story", { state: { story: blank } });
         console.log("🆕 [Reset] Blank story set and old state pushed to undo stack");
       },
+
+      
     })) as PersistedStore,
     {
       name: "draftscape-story",

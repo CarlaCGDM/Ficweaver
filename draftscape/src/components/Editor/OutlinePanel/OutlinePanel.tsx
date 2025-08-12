@@ -10,9 +10,9 @@ import OutlineToolbar from "./OutlineToolbar";
 import OutlineHeader from "./OutlineHeader";
 import OutlineControls from "./OutlineControls";
 import { exportProjectAsZip } from "./utils/exportProjectAsZip";
-import { importProjectFromZip } from "./utils/importProjectFromZip";
 import { useImageStore } from "../../../context/imageStore/imageStore";
 import { safeScrollToCenter } from "../utils/safeScrollToCenter";
+import { getOpenStatesFromFocus, getChaptersInOrder } from "./utils/outlineHelpers";
 
 interface OutlinePanelProps {
   onFocusNode: (nodeId: string) => void;
@@ -25,60 +25,30 @@ export default function OutlinePanel({
   onEditNode,
   focusedNodeId,
 }: OutlinePanelProps) {
-  const story = useStoryStore((state) => state.story) ?? { title: "", chapters: [] };
+  const story = useStoryStore((state) => state.story);
   const updateStoryTitle = useStoryStore((state) => state.updateStoryTitle);
-  const addChapter = useStoryStore((state) => state.addChapter);
+  const createChapter = useStoryStore((state) => state.createChapter);
 
   const [showActionButtons, setShowActionButtons] = useState(false);
   const [openChapters, setOpenChapters] = useState<Record<string, boolean>>({});
   const [openScenes, setOpenScenes] = useState<Record<string, boolean>>({});
 
-  // ✅ Scroll refs
   const containerRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<Record<string, HTMLLIElement | null>>({});
 
   // ✅ Expand relevant chapter/scene when focus changes and scroll into view
   useEffect(() => {
     if (!focusedNodeId) return;
+    const { openChapters, openScenes } = getOpenStatesFromFocus(story, focusedNodeId);
+    setOpenChapters(openChapters);
+    setOpenScenes(openScenes);
 
-    let updatedChapters: Record<string, boolean> = {};
-    let updatedScenes: Record<string, boolean> = {};
-
-    for (const chapter of story.chapters) {
-      if (chapter.chapterNode.id === focusedNodeId || chapter.id === focusedNodeId) {
-        updatedChapters = { [chapter.id]: true };
-        updatedScenes = {};
-        break;
-      }
-
-      for (const scene of chapter.scenes) {
-        const sceneNode = scene.nodes.find((n) => n.type === "scene");
-        if (
-          scene.id === focusedNodeId ||
-          sceneNode?.id === focusedNodeId ||
-          scene.nodes.some((n) => n.id === focusedNodeId)
-        ) {
-          updatedChapters = { [chapter.id]: true };
-          updatedScenes = { [scene.id]: true };
-          break;
-        }
-      }
-      if (Object.keys(updatedChapters).length) break;
-    }
-
-    setOpenChapters(updatedChapters);
-    setOpenScenes(updatedScenes);
-
-    // ✅ Scroll focused node into center view
     if (focusedNodeId && nodeRefs.current[focusedNodeId]) {
-  const scroller = containerRef.current;
-  const el = nodeRefs.current[focusedNodeId]!;
-  if (scroller) {
-    safeScrollToCenter(scroller, el);
-  }
-}
-
-  }, [focusedNodeId, story.chapters]);
+      const scroller = containerRef.current;
+      const el = nodeRefs.current[focusedNodeId]!;
+      if (scroller) safeScrollToCenter(scroller, el);
+    }
+  }, [focusedNodeId, story]);
 
   const handleEditStoryTitle = () => {
     const newTitle = window.prompt("Edit Story Title:", story.title);
@@ -96,38 +66,36 @@ export default function OutlinePanel({
 
     storyStore.pushHistory();
     imageStore.clearImages();
-    storyStore.setStory({ title: "Untitled Story", chapters: [] }, true);
+    storyStore.setStory(
+      { title: "Untitled Story", nodeMap: {}, order: [], childrenOrder: {} },
+      true
+    );
   };
 
   const handleExportZip = () => exportProjectAsZip(story);
 
+  const chapters = getChaptersInOrder(story);
+
   return (
     <div style={outlinePanelContainer}>
-      {/* 🔒 Fixed Toolbar */}
-      <OutlineToolbar
-        onExport={handleExportZip}
-      />
+      <OutlineToolbar onExport={handleExportZip} />
 
-      {/* 🧾 Scrollable Content */}
       <div ref={containerRef} style={scrollContainer}>
-        {/* Header */}
         <OutlineHeader title={story.title} onEditTitle={handleEditStoryTitle} />
 
-        {/* Controls */}
         <OutlineControls
-          chapters={story.chapters}
+          chapters={chapters}
           focusedNodeId={focusedNodeId}
           openChapters={openChapters}
           setOpenChapters={setOpenChapters}
           setOpenScenes={setOpenScenes}
-          onAddChapter={addChapter}
+          onAddChapter={() => createChapter("New Chapter")}
           showActionButtons={showActionButtons}
           setShowActionButtons={setShowActionButtons}
         />
 
-        {/* Chapter List */}
         <ul style={{ paddingLeft: 0, margin: 0, listStyle: "none" }}>
-          {story.chapters.map((ch, index) => (
+          {chapters.map((ch, index) => (
             <ChapterItem
               key={ch.id}
               chapter={ch}

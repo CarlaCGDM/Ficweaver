@@ -10,19 +10,19 @@ import NodeConnections from "./NodeConnections";
 import type { NodeData } from "../../context/storyStore/types";
 
 interface CanvasProps {
-  onExposeFocus?: (focus: (nodeId?: string) => void) => void; 
+  onExposeFocus?: (focus: (nodeId?: string) => void) => void;
   onEditNode: (node: NodeData) => void;
   onFocusNode: (nodeId: string) => void; // ✅ Add global focus handler
   focusedNodeId?: string;
   className?: string;
 }
 
-export default function Canvas({ 
-  onExposeFocus, 
-  onEditNode, 
+export default function Canvas({
+  onExposeFocus,
+  onEditNode,
   onFocusNode, // ✅ Add this prop
   focusedNodeId,
-  className, 
+  className,
 }: CanvasProps) {
   const story = useStoryStore((state) => state.story);
   const updateNodePosition = useStoryStore((state) => state.updateNodePosition);
@@ -41,22 +41,16 @@ export default function Canvas({
   const handleZoomChange = (ref: any) => setZoomScale(ref?.state?.scale || 1);
 
   const findNodeById = (nodeId: string) => {
-    for (const ch of story.chapters) {
-      if (ch.chapterNode.id === nodeId) return ch.chapterNode;
-      for (const sc of ch.scenes) {
-        for (const n of sc.nodes) if (n.id === nodeId) return n;
-      }
-    }
-    return null;
+    return useStoryStore.getState().story.nodeMap[nodeId] ?? null;
   };
 
   // ✅ Handle double-click: call global focus first, then canvas focus
   const handleNodeDoubleClick = (nodeId: string) => {
     console.log("🎯 Canvas double-click on node:", nodeId);
-    
+
     // 1. Trigger global focus (updates all components, applies highlights)
     onFocusNode(nodeId);
-    
+
     // 2. Then do canvas-specific focusing (zoom/pan to node)
     focusNode(nodeId);
   };

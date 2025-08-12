@@ -12,6 +12,8 @@ import { baseNodeStyle, miniHeaderStyle } from "./nodeStyles";
 import NodeActions from "./NodeActions";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
 import { useTheme } from "../../../context/themeProvider/ThemeProvider";
+import { useNodeMetricsStore } from "../../../context/uiStore/nodeMetricsStore";
+import StickerOverlay from "./StickerOverlay";
 
 // ---------- color helpers (no visual change)
 function resolveColor(input?: string | number): string {
@@ -24,7 +26,6 @@ const softTint = (color: string, pct = 35) =>
 
 // ---------- flat-store helpers
 function findParentSceneId(story: Story, nodeId: string): string | null {
-  // find a key in childrenOrder where the array contains nodeId AND that key is a scene
   for (const [parentId, childIds] of Object.entries(story.childrenOrder)) {
     if (childIds?.includes(nodeId)) {
       const parent = story.nodeMap[parentId];
@@ -35,7 +36,6 @@ function findParentSceneId(story: Story, nodeId: string): string | null {
 }
 
 function findChapterOfScene(story: Story, sceneId: string): string | null {
-  // find chapter whose childrenOrder includes this sceneId
   for (const chId of story.order) {
     const kids = story.childrenOrder[chId] ?? [];
     if (kids.includes(sceneId)) return chId;
@@ -53,8 +53,6 @@ export default function TextNode(
 ) {
   const {
     node,
-    parentChapterId: _legacyParentChapterId, // unused in flat model
-    parentSceneId: _legacyParentSceneId,     // unused in flat model
     chapterColor,
     isDragging,
     isInDragGroup,
@@ -72,6 +70,7 @@ export default function TextNode(
   const isFocused = focusedNodeId === node.id;
   const baseStyle = baseNodeStyle(isInDragGroup, glowColor);
 
+  // store
   const story = useStoryStore((s) => s.story);
   const setStory = useStoryStore((s) => s.setStory);
 
@@ -82,26 +81,28 @@ export default function TextNode(
   const parentScene = (sceneId ? story.nodeMap[sceneId] : null) as SceneNode | null;
   const parentChapter = (chapterId ? story.nodeMap[chapterId] : null) as ChapterNode | null;
 
-  // sticker availability
-  const [stickerExists, setStickerExists] = useState(true);
-
-  // measure & shift logic
   const nodeRef = useRef<HTMLDivElement>(null);
-  const prevHeightRef = useRef(0);
-  const lastShiftDeltaRef = useRef(0);
-  const lastThemeRef = useRef({ themeId, mode });
-  const lastTextRef = useRef(textNode.text);
 
-  // connect
+  // connect-mode visuals
   const dim = props.isConnectMode && !props.isValidConnectTarget;
   const hilite = props.isConnectMode && props.isValidConnectTarget;
 
-  useLayoutEffect(() => {
-    if (!nodeRef.current) return;
+  // metrics + shifting (single observer)
+  const setNodeSize = useNodeMetricsStore((s) => s.setNodeSize);
+  const prevHeightRef = useRef(0);
+  const lastShiftDeltaRef = useRef(0);
+  const lastThemeRef = useRef({ themeId, mode });
 
-    const updateSize = () => {
-      const el = nodeRef.current!;
+  useLayoutEffect(() => {
+    const el = nodeRef.current;
+    if (!el) return;
+
+    const updateOnResize = () => {
+      // 1) publish live size
       const newHeight = el.offsetHeight;
+      setNodeSize(node.id, { width: el.offsetWidth, height: newHeight });
+
+      // 2) shift logic
       const prevHeight = prevHeightRef.current;
       const deltaY = newHeight - prevHeight;
 
@@ -119,7 +120,7 @@ export default function TextNode(
           return;
         }
 
-        // Build a shallow copy we can mutate safely
+        // Mutate a shallow copy
         const s: Story = {
           title: story.title,
           nodeMap: { ...story.nodeMap },
@@ -161,9 +162,10 @@ export default function TextNode(
           }
         }
 
-        // 3) shift subsequent CHAPTERS (their chapter node + all scenes + all children)
+        // 3) shift subsequent CHAPTERS (their chapter node + all scenes + children)
         if (chapterId) {
-          const afterChapters = subsequentIds(s.order, chapterId);
+          const idx = s.order.indexOf(chapterId);
+          const afterChapters = idx >= 0 ? s.order.slice(idx + 1) : [];
           for (const chId of afterChapters) {
             const chNode = s.nodeMap[chId];
             if (chNode && chNode.type === "chapter") {
@@ -187,56 +189,36 @@ export default function TextNode(
           }
         }
 
-        setStory(s); // respects your undo history unless skipHistory is true
+        setStory(s);
         lastShiftDeltaRef.current = deltaY;
       }
 
       prevHeightRef.current = newHeight;
     };
 
-    // initial measure + observe
-    updateSize();
-    const ro = new ResizeObserver(updateSize);
-    ro.observe(nodeRef.current);
-
+    // initial + observe changes
+    updateOnResize();
+    const ro = new ResizeObserver(updateOnResize);
+    ro.observe(el);
     return () => ro.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [story, node.id, sceneId, chapterId, themeId, mode]);
+  }, [story, node.id, sceneId, chapterId, themeId, mode, setNodeSize]);
+
+  console.log(stickerBasePath)
+  console.log(textNode.sticker)
 
   return (
     <>
-      {/* Sticker Layer (unchanged visuals) */}
-      {textNode.sticker && stickerExists && (
-        <div
-          style={{
-            position: "absolute",
-            top: node.position.y - 50,
-            left: node.position.x - 50,
-            width: (nodeRef.current?.offsetWidth ?? 0) + 100,
-            height: (nodeRef.current?.offsetHeight ?? 0) + 100,
-            zIndex: 50,
-            pointerEvents: "none",
-          }}
-        >
-          <img
-            src={`${stickerBasePath}/${String(textNode.sticker.imageIndex).padStart(2, "0")}.png`}
-            alt="Sticker"
-            onError={() => setStickerExists(false)}
-            style={{
-              position: "absolute",
-              width: "100px",
-              height: "100px",
-              pointerEvents: "none",
-              ...(textNode.sticker.corner === "top-left" && { top: 0, left: 0 }),
-              ...(textNode.sticker.corner === "top-right" && { top: 0, right: 0 }),
-              ...(textNode.sticker.corner === "bottom-left" && { bottom: 0, left: 0 }),
-              ...(textNode.sticker.corner === "bottom-right" && { bottom: 0, right: 0 }),
-            }}
-          />
-        </div>
-      )}
+      {/* Sticker overlay (decoupled) */}
+      <StickerOverlay
+        hostRef={nodeRef}
+        nodeId={node.id}
+        nodePosition={node.position}
+        sticker={textNode.sticker as any}
+        basePath={stickerBasePath}
+      />
 
-      {/* 📝 Main Node (same styles) */}
+      {/* 📝 Main Node */}
       <div
         ref={nodeRef}
         onMouseDown={(e) => onMouseDown(e, node.id, node.position.x, node.position.y)}
@@ -252,9 +234,9 @@ export default function TextNode(
           zIndex: 100,
           border: "1px solid var(--color-border)",
           opacity: dim ? 0.35 : 1,
-  outline: hilite ? "2px dashed var(--color-accent)" : undefined,
-  outlineOffset: hilite ? 2 : undefined,
-  cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
+          outline: hilite ? "2px dashed var(--color-accent)" : undefined,
+          outlineOffset: hilite ? 2 : undefined,
+          cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
         }}
       >
         <NodeActions nodeId={node.id} onEditNode={onEditNode} />

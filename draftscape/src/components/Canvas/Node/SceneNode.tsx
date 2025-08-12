@@ -6,6 +6,9 @@ import { baseNodeStyle, headerStyle } from "./nodeStyles";
 import NodeActions from "./NodeActions";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
 
+// ⬇️ NEW: metrics store import
+import { useNodeMetricsStore } from "../../../context/uiStore/nodeMetricsStore";
+
 /** Accepts string | number | undefined (keeps your tokens working) */
 function resolveColor(input: unknown, fallbackVar: string): string {
   if (typeof input === "number") return `var(--chapter-color-${input + 1})`;
@@ -50,12 +53,24 @@ export default function SceneNode(
         !!n && (n.type === "picture" || n.type === "annotation" || n.type === "event")
     );
 
-  // ---- (optional) height-aware shifting was using old helpers; skipping for now
-  //      to keep this lean and avoid side-effects until dragging/rehydration is stable.
+  // ⬇️ NEW: publish live width/height to metrics store
+  const setNodeSize = useNodeMetricsStore((s) => s.setNodeSize);
   const nodeRef = useRef<HTMLDivElement>(null);
+
   useLayoutEffect(() => {
-    // noop placeholder (keeps your previous measure/ref intact without shifting)
-  }, []);
+    const el = nodeRef.current;
+    if (!el) return;
+
+    const report = () => {
+      setNodeSize(node.id, { width: el.offsetWidth, height: el.offsetHeight });
+    };
+
+    // initial + observe changes
+    report();
+    const ro = new ResizeObserver(report);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [node.id, setNodeSize]);
 
   const dim = props.isConnectMode && !props.isValidConnectTarget;
   const hilite = props.isConnectMode && props.isValidConnectTarget;
@@ -80,8 +95,6 @@ export default function SceneNode(
           outline: hilite ? "4px dashed var(--color-accent)" : undefined,
           outlineOffset: hilite ? 2 : undefined,
           cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
-          
-          
         }}
       >
         {!isFocused && (

@@ -5,6 +5,7 @@ import type {
   StoryState,
   NodeData,
 } from "../types";
+import { positionForChapterAfter } from "../positioning";
 
 // Local helper types for Zustand slice creators
 type SetState = (
@@ -41,11 +42,20 @@ export const chapterActions = (set: SetState, get: GetState): Partial<StoryState
     const story = structuredClone(get().story);
     const id = nanoid();
 
+    // compute initial position
+    let position = { x: 100, y: 100 };
+    if (insertAfterId && story.nodeMap[insertAfterId]?.type === "chapter") {
+      position = positionForChapterAfter(story, insertAfterId);
+    } else if (!insertAfterId && story.order.length) {
+      // if appending without an explicit target, place after the current last chapter
+      position = positionForChapterAfter(story, story.order[story.order.length - 1]);
+    }
+
     const newChapter: ChapterNode = {
       id,
       type: "chapter",
       parentId: null,
-      position: { x: 0, y: 0 },
+      position: position,
       title,
       tags: [],
     };

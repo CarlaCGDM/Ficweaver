@@ -3,6 +3,8 @@ import type { ChapterNode as ChapterNodeType, NodeData } from "../../../context/
 import { baseNodeStyle, headerStyle } from "./nodeStyles";
 import NodeActions from "./NodeActions";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
+import { useNodeMetricsStore } from "../../../context/uiStore/nodeMetricsStore";
+import { useRef, useLayoutEffect } from "react";
 
 /** Normalize chapter color */
 function resolveChapterColor(input?: string | number): string {
@@ -49,6 +51,26 @@ export default function ChapterNode(
         !!n &&
         (n.type === "picture" || n.type === "annotation" || n.type === "event")
     );
+
+
+  // ⬇️ NEW: publish live width/height to metrics store
+  const setNodeSize = useNodeMetricsStore((s) => s.setNodeSize);
+  const nodeRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = nodeRef.current;
+    if (!el) return;
+
+    const report = () => {
+      setNodeSize(node.id, { width: el.offsetWidth, height: el.offsetHeight });
+    };
+
+    // initial + observe changes
+    report();
+    const ro = new ResizeObserver(report);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [node.id, setNodeSize]);
 
   // connect
   const dim = isConnectMode && !isValidConnectTarget;

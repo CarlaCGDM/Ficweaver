@@ -5,6 +5,7 @@ import type {
   StoryState,
   NodeData,
 } from "../types";
+import { positionBelow } from "../positioning";
 
 // Local helper types
 type SetState = (
@@ -34,36 +35,50 @@ const deleteRecursively = (story: StoryState["story"], nodeId: string) => {
   delete story.childrenOrder[nodeId];
 };
 
+const corners = ["top-left","top-right","bottom-left","bottom-right"] as const;
+const randomSticker = (): NonNullable<TextNode["sticker"]> => ({
+  imageIndex: Math.floor(Math.random() * 7) + 1, // 1–7
+  corner: corners[Math.floor(Math.random() * corners.length)],
+});
+
 export const textActions = (set: SetState, get: GetState): Partial<StoryState> => ({
   createText: (parentId: string, insertAfterId?: string, options: { atStart?: boolean } = {}) => {
     get().pushHistory();
-
     const story = structuredClone(get().story);
     const parent = story.nodeMap[parentId];
     if (!parent) return;
 
     const id = nanoid();
+
+    let refId: string;
+    if (options.atStart) refId = parentId;
+    else if (insertAfterId) refId = insertAfterId;
+    else {
+      const sibs = story.childrenOrder[parentId] ?? [];
+      refId = sibs.length ? sibs[sibs.length - 1] : parentId;
+    }
+
     const newText: TextNode = {
       id,
       type: "text",
       parentId,
-      position: { x: 0, y: 0 },
+      position: positionBelow(story, refId),
       text: "",
       images: [],
       tags: [],
+      sticker: randomSticker(),      // ⬅️ add this
     };
 
-    story.nodeMap[id] = newText as NodeData;
+    story.nodeMap[id] = newText;
     story.childrenOrder[id] = [];
 
     const siblings = story.childrenOrder[parentId] ?? [];
     story.childrenOrder[parentId] = siblings;
-
-    // NEW: allow inserting at the start of the parent
-    if (options.atStart) {
-      siblings.unshift(id);
-    } else {
-      insertAfter(siblings, id, insertAfterId);
+    if (options.atStart) siblings.unshift(id);
+    else {
+      const idx = insertAfterId ? siblings.indexOf(insertAfterId) : -1;
+      if (idx >= 0) siblings.splice(idx + 1, 0, id);
+      else siblings.push(id);
     }
 
     set({ story });

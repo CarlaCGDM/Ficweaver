@@ -29,14 +29,15 @@ export const eventActions = (set: SetState, get: GetState): Partial<StoryState> 
   createEvent: (parentId: string, insertAfterId?: string) => {
     get().pushHistory();
     const story = structuredClone(get().story);
-    if (!story.nodeMap[parentId]) return;
+    const parent = story.nodeMap[parentId];
+    if (!parent) return;
 
     const id = nanoid();
     const newNode: EventNode = {
       id,
       type: "event",
       parentId,
-      position: { x: 0, y: 0 },
+      position: { x: parent.position.x + 40, y: parent.position.y + 20 },
       year: new Date().getFullYear(),
       title: "",
       tags: [],

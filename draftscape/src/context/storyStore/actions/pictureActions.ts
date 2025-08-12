@@ -26,17 +26,18 @@ const deleteRecursively = (story: StoryState["story"], nodeId: string) => {
 };
 
 export const pictureActions = (set: SetState, get: GetState): Partial<StoryState> => ({
-  createPicture: (parentId: string, insertAfterId?: string) => {
+   createPicture: (parentId, insertAfterId) => {
     get().pushHistory();
     const story = structuredClone(get().story);
-    if (!story.nodeMap[parentId]) return;
+    const parent = story.nodeMap[parentId];
+    if (!parent) return;
 
     const id = nanoid();
     const newNode: PictureNode = {
       id,
       type: "picture",
       parentId,
-      position: { x: 0, y: 0 },
+      position: { x: parent.position.x + 195, y: parent.position.y - 75 },   // ⬅️ same position as parent
       description: "",
       tags: [],
     };
@@ -46,7 +47,10 @@ export const pictureActions = (set: SetState, get: GetState): Partial<StoryState
 
     const siblings = story.childrenOrder[parentId] ?? [];
     story.childrenOrder[parentId] = siblings;
-    insertAfter(siblings, id, insertAfterId);
+    // media are unordered visually; appending is fine
+    const idx = insertAfterId ? siblings.indexOf(insertAfterId) : -1;
+    if (idx >= 0) siblings.splice(idx + 1, 0, id);
+    else siblings.push(id);
 
     set({ story });
   },

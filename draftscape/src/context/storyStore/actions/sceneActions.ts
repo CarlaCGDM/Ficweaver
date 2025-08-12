@@ -5,6 +5,7 @@ import type {
   StoryState,
   NodeData,
 } from "../types";
+import { positionBelow } from "../positioning";
 
 // Local helper types
 type SetState = (
@@ -43,11 +44,23 @@ export const sceneActions = (set: SetState, get: GetState): Partial<StoryState> 
     if (!parent || parent.type !== "chapter") return;
 
     const id = nanoid();
+
+    // decide reference node
+    let refId: string;
+    if (options.atStart) {
+      refId = parentChapterId; // first scene goes below the chapter node
+    } else if (insertAfterId) {
+      refId = insertAfterId; // below the clicked scene
+    } else {
+      const sibs = story.childrenOrder[parentChapterId] ?? [];
+      refId = sibs.length ? sibs[sibs.length - 1] : parentChapterId;
+    }
+
     const newScene: SceneNode = {
       id,
       type: "scene",
       parentId: parentChapterId,
-      position: { x: 0, y: 0 },
+      position: positionBelow(story, refId),
       title,
       tags: [],
     };

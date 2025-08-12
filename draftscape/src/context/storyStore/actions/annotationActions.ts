@@ -29,14 +29,15 @@ export const annotationActions = (set: SetState, get: GetState): Partial<StorySt
   createAnnotation: (parentId: string, insertAfterId?: string) => {
     get().pushHistory();
     const story = structuredClone(get().story);
-    if (!story.nodeMap[parentId]) return;
+    const parent = story.nodeMap[parentId];
+    if (!parent) return;
 
     const id = nanoid();
     const newNode: AnnotationNode = {
       id,
       type: "annotation",
       parentId,
-      position: { x: 0, y: 0 },
+      position: { x: parent.position.x + 165, y: parent.position.y - 15 },
       text: "",
       tags: [],
     };

@@ -1,15 +1,14 @@
-// NodeEditModal.tsx
+// src/components/Editor/NodeEditModal/NodeEditModal.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
 import { useImageStore } from "../../../context/imageStore/imageStore";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
 import { Save, X } from "lucide-react";
 import "./nodeEditModalStyles.css";
 import { NodeFormFields } from "./NodeFormFields";
 import type { NodeData } from "../../../context/storyStore/types";
-import Link from "@tiptap/extension-link";
-
 
 interface NodeEditModalProps {
   node: NodeData | null;
@@ -17,21 +16,22 @@ interface NodeEditModalProps {
 }
 
 export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
-  const updateNodeData = useStoryStore((s) => s.updateNodeData)!;
+  // ✅ use the flat-store updater
+  const updateNode = useStoryStore((s) => s.updateNode);
   const story = useStoryStore((s) => s.story);
+
   const { imageMap, setImage } = useImageStore();
 
+  // ✅ gather all tags from flat nodeMap (text + event)
   const allTags = useMemo(() => {
     const tags = new Set<string>();
-    story.chapters.forEach((ch) =>
-      ch.scenes.forEach((sc) =>
-        sc.nodes.forEach((n) => {
-          if ((n.type === "text" || n.type === "event") && n.tags) n.tags.forEach((t) => tags.add(t));
-        })
-      )
-    );
-    return Array.from(tags);
-  }, [story]);
+    for (const n of Object.values(story.nodeMap)) {
+      if ((n.type === "text" || n.type === "event") && n.tags) {
+        n.tags.forEach((t) => tags.add(t));
+      }
+    }
+    return Array.from(tags).sort();
+  }, [story.nodeMap]);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -47,25 +47,21 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
   const [eventDay, setEventDay] = useState("");
   const [eventDescription, setEventDescription] = useState("");
 
-
   const textEditor = useEditor({
     extensions: [
       StarterKit,
       Link.configure({
-        openOnClick: true,    // Clicking opens link in new tab
-        autolink: true,       // Auto-detect links as you type
-        linkOnPaste: true,    // Convert pasted URLs into links
-        HTMLAttributes: {
-          rel: "noopener noreferrer",
-          target: "_blank",
-        },
+        openOnClick: true,
+        autolink: true,
+        linkOnPaste: true,
+        HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
       }),
     ],
     content: "",
     editorProps: { attributes: { class: "rich-editor", spellCheck: "true" } },
   });
 
-
+  // ✅ hydrate fields from the selected node (flat)
   useEffect(() => {
     if (!node) return;
 
@@ -74,25 +70,23 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
       setDescription(node.description || "");
     } else if (node.type === "text") {
       setSummary(node.summary || "");
-      if (textEditor) textEditor?.commands.setContent(node.text || "");
+      if (textEditor) textEditor.commands.setContent(node.text || "");
       setTags(node.tags || []);
     } else if (node.type === "annotation") {
-      if (textEditor) textEditor?.commands.setContent(node.text || "");
+      if (textEditor) textEditor.commands.setContent(node.text || "");
     } else if (node.type === "picture") {
       setPictureDescription(node.description || "");
       const storedImage = imageMap[node.id];
       setImagePreview(storedImage || null);
     } else if (node.type === "event") {
-      setEventYear(node.year.toString());
+      setEventYear(node.year?.toString() ?? "");
       setEventMonth(node.month?.toString() ?? "");
       setEventDay(node.day?.toString() ?? "");
       setTitle(node.title || "");
-      setEventDescription(node.description || ""); // 🆕
+      setEventDescription(node.description || "");
       setTags(node.tags || []);
-      if (textEditor) textEditor?.commands.setContent(node.description || "");
+      if (textEditor) textEditor.commands.setContent(node.description || "");
     }
-
-
   }, [node, textEditor, imageMap]);
 
   if (!node) return null;
@@ -104,7 +98,7 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64 = reader.result as string;
-      setImage(node.id, file);
+      setImage(node.id, file); // keeps your image store in sync
       setImagePreview(base64);
     };
     reader.readAsDataURL(file);
@@ -112,22 +106,22 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
 
   const handleSave = () => {
     if (node.type === "chapter" || node.type === "scene") {
-      updateNodeData(node.id, { title, description });
+      updateNode(node.id, { title, description });
     } else if (node.type === "text") {
-      updateNodeData(node.id, {
+      updateNode(node.id, {
         summary,
         text: textEditor ? textEditor.getHTML() : "",
         tags,
       });
     } else if (node.type === "annotation") {
-      updateNodeData(node.id, {
+      updateNode(node.id, {
         text: textEditor ? textEditor.getHTML() : "",
       });
     } else if (node.type === "picture") {
-      updateNodeData(node.id, { description: pictureDescription });
+      updateNode(node.id, { description: pictureDescription });
     } else if (node.type === "event") {
-      updateNodeData!(node.id, {
-        year: parseInt(eventYear),
+      updateNode(node.id, {
+        year: eventYear ? parseInt(eventYear) : undefined,
         month: eventMonth ? parseInt(eventMonth) : undefined,
         day: eventDay ? parseInt(eventDay) : undefined,
         title,
@@ -135,7 +129,6 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
         tags,
       });
     }
-
 
     onClose();
   };
@@ -147,13 +140,13 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
   }, [tagQuery, allTags, tags]);
 
   const handleAddTag = (tag: string) => {
-    setTags([...tags, tag]);
+    setTags((prev) => [...prev, tag]);
     setTagQuery("");
     setShowTagDropdown(false);
   };
 
   const handleRemoveTag = (tag: string) => {
-    setTags(tags.filter((t) => t !== tag));
+    setTags((prev) => prev.filter((t) => t !== tag));
   };
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -163,9 +156,7 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
         handleAddTag(filteredTags[0]);
       } else if (tagQuery.startsWith("[") && tagQuery.endsWith("]")) {
         const tag = tagQuery.slice(1, -1).trim();
-        if (tag && !tags.includes(tag)) {
-          handleAddTag(tag);
-        }
+        if (tag && !tags.includes(tag)) handleAddTag(tag);
       }
     }
   };

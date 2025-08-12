@@ -57,6 +57,9 @@ export default function SceneNode(
     // noop placeholder (keeps your previous measure/ref intact without shifting)
   }, []);
 
+  const dim = props.isConnectMode && !props.isValidConnectTarget;
+  const hilite = props.isConnectMode && props.isValidConnectTarget;
+
   return (
     <>
       {/* Main Scene Node */}
@@ -70,10 +73,15 @@ export default function SceneNode(
           border: "1px solid var(--color-border)",
           top: node.position.y,
           left: node.position.x,
-          cursor: isDragging ? "grabbing" : "grab",
           transition: "box-shadow 0.25s ease",
           zIndex: 90,
           position: "absolute",
+          opacity: dim ? 0.35 : 1,
+          outline: hilite ? "4px dashed var(--color-accent)" : undefined,
+          outlineOffset: hilite ? 2 : undefined,
+          cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
+          
+          
         }}
       >
         {!isFocused && (
@@ -83,7 +91,7 @@ export default function SceneNode(
               inset: 0,
               background: softTint(resolvedChapterColor, 30),
               pointerEvents: "none",
-              borderRadius: "6px",
+              borderRadius: "5px",
               zIndex: 0,
             }}
           />

@@ -24,8 +24,8 @@ export const headerStyle = (color: string): CSSProperties => ({
   fontSize: "16px",
   fontWeight: "bold",
   padding: "10px 6px",
-  borderTopLeftRadius: "6px",
-  borderTopRightRadius: "6px",
+  borderTopLeftRadius: "5px",
+  borderTopRightRadius: "5px",
 });
 
 // ✅ Mini-header style (for TextNode chapter/scene labels)

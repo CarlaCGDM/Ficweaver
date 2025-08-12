@@ -156,8 +156,13 @@ export interface StoryState {
   // ==============================
   // Re-parenting / moving
   // ==============================
-  reorderChapters: (orderedIds: string[]) => void;  // ⬅️ add this
-  moveNode: (nodeId: string, newParentId: string | null, insertAfterId?: string | null) => void;
+  reorderChapters: (orderedIds: string[]) => void; 
+  moveNode: (
+    nodeId: string,
+    newParentId: string | null,
+    insertAfterId?: string | null,
+    options?: { atStart?: boolean }   
+  ) => void;
 }
 
 

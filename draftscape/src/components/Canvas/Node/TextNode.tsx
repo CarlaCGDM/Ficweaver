@@ -92,6 +92,10 @@ export default function TextNode(
   const lastThemeRef = useRef({ themeId, mode });
   const lastTextRef = useRef(textNode.text);
 
+  // connect
+  const dim = props.isConnectMode && !props.isValidConnectTarget;
+  const hilite = props.isConnectMode && props.isValidConnectTarget;
+
   useLayoutEffect(() => {
     if (!nodeRef.current) return;
 
@@ -243,11 +247,14 @@ export default function TextNode(
           borderRadius: "6px",
           top: node.position.y,
           left: node.position.x,
-          cursor: isDragging ? "grabbing" : "grab",
           padding: "8px",
           transition: "box-shadow 0.25s ease",
           zIndex: 100,
           border: "1px solid var(--color-border)",
+          opacity: dim ? 0.35 : 1,
+  outline: hilite ? "2px dashed var(--color-accent)" : undefined,
+  outlineOffset: hilite ? 2 : undefined,
+  cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
         }}
       >
         <NodeActions nodeId={node.id} onEditNode={onEditNode} />

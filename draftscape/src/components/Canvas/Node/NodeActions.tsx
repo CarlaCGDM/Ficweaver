@@ -13,6 +13,7 @@ import type {
 } from "../../../context/storyStore/types";
 import { Edit3, Trash2, Plus, Route } from "lucide-react";
 import { useTheme } from "../../../context/themeProvider/ThemeProvider";
+import { useConnectStore, computeTargets } from "../../../context/uiStore/connectStore";
 
 interface NodeActionsProps {
   nodeId: string;
@@ -98,6 +99,17 @@ export default function NodeActions({ nodeId, onEditNode }: NodeActionsProps) {
   };
 
   const [hovered, setHovered] = useState(false);
+
+  // Connect
+
+  const { startConnect } = useConnectStore();
+
+  const handleStartReconnect = () => {
+    // Chapters/scenes/texts/media are allowed sources. (No-op for others if you want.)
+    const targets = computeTargets(story, node.id);
+    if (Object.keys(targets).length === 0) return;
+    startConnect(node.id, targets);
+  };
 
   // ---------- derive hierarchy from flat model ----------
   const derived = useMemo(() => {
@@ -288,7 +300,7 @@ export default function NodeActions({ nodeId, onEditNode }: NodeActionsProps) {
             <button onClick={handleDeleteNode} style={editDeleteBtnStyle}>
               <Trash2 size={18} />
             </button>
-            <button onClick={handleDeleteNode} style={editDeleteBtnStyle}>
+            <button onClick={handleStartReconnect} style={editDeleteBtnStyle}>
               <Route size={18} />
             </button>
           </div>

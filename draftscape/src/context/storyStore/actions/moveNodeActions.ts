@@ -14,12 +14,9 @@ type GetState = () => StoryState & { pushHistory: () => void };
 // -----------------------------
 // Utilities
 // -----------------------------
-const insertAfter = (arr: string[], id: string, insertAfterId?: string | null) => {
-  if (!insertAfterId) {
-    arr.push(id);
-    return;
-  }
-  const idx = arr.indexOf(insertAfterId);
+const insertAfter = (arr: string[], id: string, afterId?: string | null) => {
+  if (!afterId) { arr.push(id); return; }
+  const idx = arr.indexOf(afterId);
   if (idx >= 0) arr.splice(idx + 1, 0, id);
   else arr.push(id);
 };
@@ -74,70 +71,48 @@ export const moveNodeActions = (set: SetState, get: GetState): Partial<StoryStat
    * - newParentId = null → top-level (only for chapters)
    * - insertAfterId places the node after a specific sibling under the new parent
    */
-  moveNode: (nodeId: string, newParentId: string | null, insertAfterId?: string | null) => {
-    get().pushHistory();
+  moveNode: (nodeId, newParentId, insertAfterId = null, options = {}) => {
+    const { story, pushHistory } = get();
+    const s = structuredClone(story);
+    const node = s.nodeMap[nodeId];
+    if (!node) return;
 
-    const story = structuredClone(get().story);
-    const node = story.nodeMap[nodeId];
-    if (!node) {
-      console.warn("[moveNode] node not found:", nodeId);
-      return;
-    }
+    pushHistory?.();
 
+    // 1) Detach from previous location
     const oldParentId = node.parentId;
-    const oldParentType: NodeData["type"] | null =
-      oldParentId ? story.nodeMap[oldParentId]?.type ?? null : null;
-
-    const newParentType: NodeData["type"] | null =
-      newParentId ? story.nodeMap[newParentId]?.type ?? null : null;
-
-    // Validate new parent existence/type (null means top-level)
-    if (newParentId && !story.nodeMap[newParentId]) {
-      console.warn("[moveNode] newParent not found:", newParentId);
-      return;
-    }
-
-    // Prevent cycles: cannot move a node under its own descendant
-    if (newParentId && isDescendant(story, nodeId, newParentId)) {
-      console.warn("[moveNode] cannot move a node under its own descendant");
-      return;
-    }
-
-    // Validate allowed parent/child relationship
-    if (!isValidParent(node.type, newParentType)) {
-      console.warn(
-        `[moveNode] invalid parent type: child ${node.type} → parent ${newParentType ?? "null"}`
-      );
-      return;
-    }
-
-    // If top-level: only chapters allowed
-    if (newParentId === null && node.type !== "chapter") {
-      console.warn("[moveNode] only chapters can be top-level");
-      return;
-    }
-
-    // Remove from old parent/order
-    if (oldParentId) {
-      removeFromArray(story.childrenOrder[oldParentId], nodeId);
+    if (oldParentId === null) {
+      s.order = s.order.filter((id) => id !== nodeId);
     } else {
-      // top-level (chapter) previously
-      story.order = story.order.filter((cid) => cid !== nodeId);
+      const sibs = s.childrenOrder[oldParentId] ?? [];
+      s.childrenOrder[oldParentId] = sibs.filter((id) => id !== nodeId);
     }
 
-    // Insert into new parent/order
-    if (newParentId) {
-      if (!story.childrenOrder[newParentId]) story.childrenOrder[newParentId] = [];
-      insertAfter(story.childrenOrder[newParentId], nodeId, insertAfterId ?? undefined);
+    // 2) Set new parent
+    node.parentId = newParentId;
+    s.nodeMap[nodeId] = node;
+
+    // 3) Insert at the new location
+    if (newParentId === null) {
+      // top-level chapters
+      const top = [...s.order];
+      if (options.atStart) {
+        top.unshift(nodeId);                 // ⬅️ honor atStart
+      } else {
+        insertAfter(top, nodeId, insertAfterId);
+      }
+      s.order = top;
     } else {
-      // top-level
-      insertAfter(story.order, nodeId, insertAfterId ?? undefined);
+      const siblings = s.childrenOrder[newParentId] ?? [];
+      s.childrenOrder[newParentId] = siblings;
+      if (options.atStart) {
+        siblings.unshift(nodeId);            // ⬅️ honor atStart
+      } else {
+        insertAfter(siblings, nodeId, insertAfterId);
+      }
     }
 
-    // Update parentId
-    story.nodeMap[nodeId] = { ...node, parentId: newParentId } as NodeData;
-
-    set({ story });
+    set({ story: s });
   },
 
   /**

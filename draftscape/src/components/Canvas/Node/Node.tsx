@@ -23,6 +23,10 @@ export interface NodeProps {
   chapterIndex?: number;
   sceneIndex?: number;
   focusedNodeId?: string;
+
+  // Connecting
+  isConnectMode?: boolean;
+  isValidConnectTarget?: boolean;
 }
 
 export default function Node(props: NodeProps) {

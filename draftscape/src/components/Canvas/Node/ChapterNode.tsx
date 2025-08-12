@@ -15,16 +15,22 @@ function resolveChapterColor(input?: string | number): string {
 const softTint = (color: string, pct = 20) =>
   `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 
-export default function ChapterNode({
-  node,
-  chapterColor,
-  isDragging,
-  isInDragGroup,
-  onMouseDown,
-  onEditNode,
-  chapterIndex,
-  focusedNodeId,
-}: NodeProps & { focusedNodeId?: string; chapterIndex?: number }) {
+export default function ChapterNode(
+  props: NodeProps & { focusedNodeId?: string; chapterIndex?: number }) {
+
+  const {
+    node,
+    chapterColor,
+    isDragging,
+    isInDragGroup,
+    onMouseDown,
+    onEditNode,
+    chapterIndex,
+    focusedNodeId,
+    isConnectMode,
+    isValidConnectTarget,
+  } = props;
+
   const chapterNode = node as ChapterNodeType;
   const resolvedChapterColor = resolveChapterColor(chapterColor);
   const glowColor = resolvedChapterColor || "var(--color-accent)";
@@ -44,6 +50,10 @@ export default function ChapterNode({
         (n.type === "picture" || n.type === "annotation" || n.type === "event")
     );
 
+  // connect
+  const dim = isConnectMode && !isValidConnectTarget;
+  const hilite = isConnectMode && isValidConnectTarget;
+
   return (
     <>
       <div
@@ -55,10 +65,13 @@ export default function ChapterNode({
           border: "1px solid var(--color-border)",
           top: node.position.y,
           left: node.position.x,
-          cursor: isDragging ? "grabbing" : "grab",
           transition: "box-shadow 0.25s ease",
           zIndex: 80,
           position: "absolute",
+          opacity: dim ? 0.35 : 1,
+          outline: hilite ? "4px dashed var(--color-accent)" : undefined,
+          outlineOffset: hilite ? 2 : undefined,
+          cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
         }}
       >
         {/* Subtle color wash */}
@@ -69,7 +82,7 @@ export default function ChapterNode({
               inset: 0,
               background: softTint(resolvedChapterColor, 20),
               pointerEvents: "none",
-              borderRadius: "6px",
+              borderRadius: "5px",
               zIndex: 0,
             }}
           />

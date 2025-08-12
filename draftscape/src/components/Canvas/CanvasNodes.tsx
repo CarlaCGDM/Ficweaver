@@ -3,6 +3,7 @@ import { useRef, useCallback, useEffect } from "react";
 import type { Story, NodeData } from "../../context/storyStore/types";
 import { collectCanvasDragGroup } from "../../context/storyStore/helpers";
 import { useStoryStore } from "../../context/storyStore/storyStore";
+import { useConnectStore } from "../../context/uiStore/connectStore";
 
 interface CanvasNodesProps {
   story: Story;
@@ -28,6 +29,16 @@ export default function CanvasNodes({
   const lastClickTimeRef = useRef<number>(0);
   const mouseDownInfoRef = useRef<{ nodeId: string; startPos: { x: number; y: number } } | null>(null);
   const isDraggingRef = useRef(false);
+
+  const { isConnecting, targets, tryComplete, cancelConnect } = useConnectStore();
+  const validSet = new Set(Object.keys(targets));
+
+  // ESC to cancel
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") cancelConnect(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [cancelConnect]);
 
   const handleGlobalMouseMove = useCallback((e: MouseEvent) => {
     if (!mouseDownInfoRef.current || isDraggingRef.current) return;
@@ -66,6 +77,15 @@ export default function CanvasNodes({
   }, [handleGlobalMouseMove, onNodeDoubleClick]);
 
   const handleMouseDown = (e: React.MouseEvent, nodeId: string) => {
+
+    // Don't drag if it's connecting
+    if (isConnecting) {
+      e.stopPropagation();
+      e.preventDefault();
+      tryComplete(nodeId); // only completes if nodeId in targets
+      return;
+    }
+
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
     if (target.closest("a, button, input, textarea, select, [contenteditable]")) return;
@@ -123,6 +143,8 @@ export default function CanvasNodes({
           chapterIndex={chapterIndex}
           sceneIndex={sceneIndex}
           focusedNodeId={focusedNodeId}
+          isConnectMode={isConnecting}
+          isValidConnectTarget={isConnecting ? validSet.has(node.id) : false}
         />
         {/* Render children recursively */}
         {(story.childrenOrder[node.id] ?? []).map((childId, idx) =>

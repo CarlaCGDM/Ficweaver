@@ -10,6 +10,7 @@ export default function AnnotationNode({
   isInDragGroup,
   onMouseDown,
   onEditNode,
+  isConnectMode,
   focusedNodeId,
 }: NodeProps & { focusedNodeId?: string }) {
   const annotationNode = node as AnnotationNodeType;
@@ -33,6 +34,23 @@ export default function AnnotationNode({
     return () => observer.disconnect();
   }, []);
 
+  // Add CSS for selective z-index on links
+  useLayoutEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .annotation-content a {
+        position: relative;
+        z-index: 500 !important;
+        pointer-events: auto;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   return (
     <div
       data-node-id={node.id}
@@ -49,6 +67,8 @@ export default function AnnotationNode({
         border: "1px solid var(--color-warningBorder)",
         boxShadow: "var(--node-shadow)",
 
+        opacity: isConnectMode ? 0.35 : 1,
+
         width: 250,
         minHeight: 100,
         padding: "8px",
@@ -61,7 +81,12 @@ export default function AnnotationNode({
       <NodeActions nodeId={node.id} onEditNode={onEditNode} />
 
       <div
-        style={{ fontSize: "11px", lineHeight: "1.4", minHeight: "60px", }}
+        className="annotation-content"
+        style={{ 
+          fontSize: "11px", 
+          lineHeight: "1.4", 
+          minHeight: "60px",
+        }}
         dangerouslySetInnerHTML={{
           __html: "<p>" + (annotationNode.text || "<i>(Empty annotation)</i>") + "</p>",
         }}

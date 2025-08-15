@@ -1,5 +1,5 @@
 // src/components/Canvas/Node/SceneNode.tsx
-import { useRef, useLayoutEffect } from "react";
+import { useRef, useLayoutEffect, useMemo } from "react";
 import type { NodeProps } from "./Node";
 import type { SceneNode as SceneNodeType, NodeData } from "../../../context/storyStore/types";
 import { baseNodeStyle, headerStyle } from "./nodeStyles";
@@ -35,6 +35,33 @@ export default function SceneNode(
   } = props;
 
   const sceneNode = node as SceneNodeType;
+  const story = useStoryStore((s) => s.story);
+
+  // 🔢 Derive indices if they weren’t provided
+  const { derivedChapterIndex, derivedSceneIndex } = useMemo(() => {
+    // parent chapter is stored on the scene in flat model
+    const parentChapterId = sceneNode.parentId;
+    let chIdx: number | undefined = undefined;
+    let scIdx: number | undefined = undefined;
+
+    if (parentChapterId) {
+      // chapter index from story.order
+      const i = story.order.indexOf(parentChapterId);
+      if (i >= 0) chIdx = i;
+
+      // scene index among chapter’s scenes
+      const siblings = (story.childrenOrder[parentChapterId] ?? [])
+        .filter((id) => story.nodeMap[id]?.type === "scene");
+      const j = siblings.indexOf(sceneNode.id);
+      if (j >= 0) scIdx = j;
+    }
+
+    return { derivedChapterIndex: chIdx, derivedSceneIndex: scIdx };
+  }, [sceneNode.id, sceneNode.parentId, story]);
+
+  // Choose provided prop or fallback
+  const chIndexToShow = (chapterIndex ?? derivedChapterIndex) ?? undefined;
+  const scIndexToShow = (sceneIndex ?? derivedSceneIndex) ?? undefined;
 
   // ✅ Colors (unchanged visuals)
   const resolvedChapterColor = resolveColor(chapterColor, "var(--chapter-color-1)");
@@ -44,7 +71,6 @@ export default function SceneNode(
   const baseStyle = baseNodeStyle(isInDragGroup, glowColor);
 
   // ✅ FLAT STORE: pull children (texts + media) from childrenOrder / nodeMap
-  const story = useStoryStore((s) => s.story);
   const childIds = story.childrenOrder[node.id] ?? [];
   const attachedMedia = childIds
     .map((id) => story.nodeMap[id])
@@ -53,19 +79,13 @@ export default function SceneNode(
         !!n && (n.type === "picture" || n.type === "annotation" || n.type === "event")
     );
 
-  // ⬇️ NEW: publish live width/height to metrics store
+  // publish size to metrics store (unchanged)
   const setNodeSize = useNodeMetricsStore((s) => s.setNodeSize);
   const nodeRef = useRef<HTMLDivElement>(null);
-
   useLayoutEffect(() => {
     const el = nodeRef.current;
     if (!el) return;
-
-    const report = () => {
-      setNodeSize(node.id, { width: el.offsetWidth, height: el.offsetHeight });
-    };
-
-    // initial + observe changes
+    const report = () => setNodeSize(node.id, { width: el.offsetWidth, height: el.offsetHeight });
     report();
     const ro = new ResizeObserver(report);
     ro.observe(el);
@@ -77,7 +97,6 @@ export default function SceneNode(
 
   return (
     <>
-      {/* Main Scene Node */}
       <div
         ref={nodeRef}
         data-node-id={node.id}
@@ -92,9 +111,10 @@ export default function SceneNode(
           zIndex: 90,
           position: "absolute",
           opacity: dim ? 0.35 : 1,
-          outline: hilite ? "4px dashed var(--color-accent)" : undefined,
+          outline: hilite ? `4px dashed ${resolvedChapterColor}` : undefined,
           outlineOffset: hilite ? 2 : undefined,
           cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
+          filter: hilite ? "brightness(1.25)" : undefined,
         }}
       >
         {!isFocused && (
@@ -117,11 +137,11 @@ export default function SceneNode(
             ...headerStyle("transparent"),
             position: "relative",
             zIndex: 1,
-            color: "var(--color-text)"
+            color: "var(--color-text)",
           }}
         >
-          🎬 Chapter {chapterIndex !== undefined ? chapterIndex + 1 : "?"}, Scene{" "}
-          {sceneIndex !== undefined ? sceneIndex + 1 : "?"}
+          🎬 Chapter {chIndexToShow !== undefined ? chIndexToShow + 1 : "?"}, Scene{" "}
+          {scIndexToShow !== undefined ? scIndexToShow + 1 : "?"}
         </div>
 
         <div style={{ padding: "14px 8px", position: "relative", zIndex: 1 }}>
@@ -136,7 +156,6 @@ export default function SceneNode(
         </div>
       </div>
 
-      {/* Attached media (positioned absolutely; visuals unchanged) */}
       {attachedMedia.map((media) => (
         <div
           key={media.id}

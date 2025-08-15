@@ -1,12 +1,16 @@
-import type { TextNode, Scene, Chapter } from "../../../context/storyStore/types";
+// src/components/Editor/TextEditor/TextNodeBlock.tsx
+import type { TextNode } from "../../../context/storyStore/types";
 import { verticalLineStyle, textContainerStyle, hoverOverlayStyle } from "./textEditorStyles";
-import { useTheme } from "../../../context/themeProvider/ThemeProvider";
+
+type MinimalScene = { id: string; title?: string };
 
 interface TextNodeBlockProps {
   textNode: TextNode;
-  scene: Scene;
-  chapter: Chapter;
+  scene: MinimalScene;
+  chapterId: string;       // <- new
+  chapterColor: string;    // <- new, already resolved color string
   onFocusNode: (nodeId: string) => void;
+
   hoveredId: string | null;
   setHoveredId: (id: string | null) => void;
   hoveredSceneId: string | null;
@@ -14,16 +18,19 @@ interface TextNodeBlockProps {
   hoveredChapterId: string | null;
   setHoveredChapterId: (id: string | null) => void;
   setHoveredDetails: (details: any) => void;
+
   nodeRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
   focusedNodeId: string | null;
   focusedSceneId: string | null;
+
   searchQuery?: string;
 }
 
 export default function TextNodeBlock({
   textNode,
   scene,
-  chapter,
+  chapterId,
+  chapterColor,
   onFocusNode,
   hoveredId,
   setHoveredId,
@@ -37,39 +44,25 @@ export default function TextNodeBlock({
   focusedSceneId,
   searchQuery = "",
 }: TextNodeBlockProps) {
-  // ✅ Resolve chapter color from theme
-  const { theme, mode } = useTheme();
-  const palette: string[] = theme.chapterColors?.[mode] ?? [];
-  const colorIndexFromModel = (() => {
-    const anyCh = chapter as any;
-    if (typeof anyCh.colorIndex === "number") return anyCh.colorIndex;
-    if (typeof chapter.color === "number") return chapter.color as number;
-    return 0;
-  })();
-  const chapterColor: string =
-    palette[colorIndexFromModel] ??
-    `var(--chapter-color-${colorIndexFromModel + 1})`;
-
-  // ✅ Word count from plain text
+  // word count from plain text
   const plainText = textNode.text.replace(/<[^>]+>/g, "");
   const wordCount = plainText.split(/\s+/).filter(Boolean).length;
 
-  // ✅ Hover logic
+  // hover logic
   const isHoveredText = hoveredId === textNode.id;
   const isHoveredSibling = hoveredSceneId === scene.id && hoveredId !== textNode.id;
-  const isChapterHover = hoveredChapterId === chapter.id && !isHoveredText;
+  const isChapterHover = hoveredChapterId === chapterId && !isHoveredText;
 
-  // ✅ Focus logic
+  // focus logic
   const isFocusedText = focusedNodeId === textNode.id;
   const isSceneFocused = focusedSceneId === scene.id && focusedNodeId?.startsWith("scene-");
   const isFocusedSibling = isSceneFocused && focusedNodeId !== textNode.id;
 
-  // ✅ Safe highlight insert using theme warning colors
   const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const applyHighlightsToHTML = (html: string, query: string) => {
     if (!query.trim()) return html;
     const terms = query.split(/\s+/).filter(Boolean).map(escapeRegExp);
-    if (terms.length === 0) return html;
+    if (!terms.length) return html;
     const regex = new RegExp(`(${terms.join("|")})`, "gi");
     return html.replace(
       regex,
@@ -104,7 +97,7 @@ export default function TextNodeBlock({
         setHoveredDetails(null);
       }}
     >
-      {/* ✅ Left vertical line only for hover */}
+      {/* Left vertical line only for hover */}
       <div
         style={verticalLineStyle(
           chapterColor,
@@ -112,18 +105,18 @@ export default function TextNodeBlock({
         )}
       />
 
-      {/* ✅ Node container */}
+      {/* Node container */}
       <div
         style={{
           ...textContainerStyle(
             chapterColor,
             isHoveredText,
             isHoveredSibling,
-            hoveredChapterId === chapter.id
+            hoveredChapterId === chapterId
           ),
         }}
       >
-        {/* ✅ Hover overlay */}
+        {/* Hover overlay */}
         {isHoveredText && (
           <div style={hoverOverlayStyle(chapterColor)}>
             <div><strong>Scene:</strong> {scene.title}</div>
@@ -152,7 +145,7 @@ export default function TextNodeBlock({
           </div>
         )}
 
-        {/* ✅ Render Rich Text Content with Highlighting */}
+        {/* Rich text with highlights */}
         <div
           style={{
             margin: 0,

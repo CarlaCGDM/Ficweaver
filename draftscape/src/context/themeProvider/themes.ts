@@ -207,6 +207,50 @@ notebook: {
   },
 },
 
+vampire: {
+  id: "vampire",
+  label: "Vampire",
+  colors: {
+    light: {
+      bg: "#2B0B0B",          // deep blood-maroon background
+      panel: "#3E0F0F",       // richer crimson panel
+      panelAlt: "#5A1A1A",    // lighter dried-blood tone for contrast surfaces
+      text: "#F5E6E0",        // pale, moonlit parchment
+      border: "#8C2E2E",      // dried-blood edge
+      accent: "#D4AF37",      // antique gold for ornate flourishes
+      accentText: "#1C0B0B",  // shadowed blood background for gold text
+      warningBg: "#5C1A1A",   // ember-blood background
+      warningBorder: "#D4AF37", // gold trim for warning
+      warningText: "#F5E6E0", // pale text for clarity
+      nodeConnection: "#A62424", // arterial red for connections
+    },
+    dark: {
+      bg: "#0A0000",          // coffin black
+      panel: "#160404",       // deep wine-black
+      panelAlt: "#2B0B0B",    // shadowed crimson
+      text: "#E6D5AF",        // faded bone-gold text
+      border: "#5C1A1A",      // dried crimson border
+      accent: "#D4AF37",      // gold as in jewelry/ornate trims
+      accentText: "#0A0000",  // black background for gold lettering
+      warningBg: "#330909",   // blood shadow
+      warningBorder: "#8C2E2E",
+      warningText: "#E6D5AF", // bone-gold clarity
+      nodeConnection: "#A62424", // arterial red threads
+    },
+  },
+  chapterColors: {
+    light: ["#A62424", "#D4AF37", "#5C1A1A", "#F5E6E0", "#8C2E2E"],
+    dark:  ["#A62424", "#D4AF37", "#5C1A1A", "#E6D5AF", "#8C2E2E"],
+  },
+  stickerBasePath: {
+    light: "/stickers/vampire/light",
+    dark:  "/stickers/vampire/dark",
+  },
+  fonts: {
+    ui: "Cinzel, serif",
+    display: "Cinzel Decorative, serif",
+  },
+},
 
 
 

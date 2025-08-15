@@ -99,8 +99,8 @@ export default function CanvasOverlay({
       <div
         style={{
           position: "absolute",
-          bottom: "10px",
-          left: "10px",
+          bottom: "1vh",
+          left: "1vh",
           pointerEvents: "auto",
         }}
         onMouseEnter={() => setShowGuide(true)}

@@ -29,22 +29,22 @@ export function useCanvasFocus(transformRef: any, story: Story) {
   const centerOnPosition = (pos: { x: number; y: number }, type: NodeData["type"], nodeId: string) => {
     if (!transformRef.current) return;
 
-    const state = transformRef.current.state || {};
-    const scale = state.scale ?? 1;
-
     const { width: vw, height: vh } = getViewportSize();
+
+    // 👇 friendlier zoom (0.8), but never zoom in beyond current
+    const currentScale: number = transformRef.current.state?.scale ?? 1;
+    const targetScale = Math.min(currentScale, 0.75);
 
     const nodeWidth = NODE_WIDTHS[type] ?? 600;
     const nodeHeight = getNodeHeight(nodeId);
 
-    const nodeCenterX = (pos.x + nodeWidth / 2) * scale;
-    const nodeCenterY = (pos.y + nodeHeight / 2) * scale;
+    const nodeCenterX = (pos.x + nodeWidth / 2) * targetScale;
+    const nodeCenterY = (pos.y + nodeHeight / 2) * targetScale;
 
     const targetX = vw / 2 - nodeCenterX;
     const targetY = vh / 2 - nodeCenterY;
 
-    // keep your easing/duration contract
-    transformRef.current.setTransform(targetX, targetY, scale, 200, "easeOut");
+    transformRef.current.setTransform(targetX, targetY, targetScale, 200, "easeOut");
   };
 
   const focusNode = (nodeId?: string) => {

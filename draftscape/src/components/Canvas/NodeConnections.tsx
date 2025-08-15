@@ -7,7 +7,7 @@ import type {
   TextNode,
   PictureNode,
   AnnotationNode,
-  EventNode
+  EventNode,
 } from "../../context/storyStore/types";
 import { useTheme } from "../../context/themeProvider/ThemeProvider";
 
@@ -18,53 +18,54 @@ interface NodeConnectionsProps {
 export default function NodeConnections({ story }: NodeConnectionsProps) {
   const { theme, mode } = useTheme();
 
-  // For a given chapter index, get the CSS var color
   const getChapterColor = (chapterIndex: number) =>
     theme.chapterColors[mode][chapterIndex % theme.chapterColors[mode].length];
 
-  /** 
- * Build ordered list of outline nodes:
- * Chapter -> Scene -> Text
- * (EXCLUDES media nodes)
- */
-const orderedNodes: { node: ChapterNode | SceneNode | TextNode; chapterColor: string }[] = [];
+  // Build per-chapter chains: [chapter, scene..., text...]
+  const chapterChains: Array<{
+    color: string;
+    chain: Array<ChapterNode | SceneNode | TextNode>;
+  }> = [];
 
-story.order.forEach((chapterId, chapterIndex) => {
-  const chapter = story.nodeMap[chapterId];
-  if (!chapter || chapter.type !== "chapter") return;
+  story.order.forEach((chapterId, chapterIndex) => {
+    const ch = story.nodeMap[chapterId];
+    if (!ch || ch.type !== "chapter") return;
 
-  const chapterColor = getChapterColor(chapterIndex);
-  orderedNodes.push({ node: chapter, chapterColor });
+    const color = getChapterColor(chapterIndex);
+    const chain: Array<ChapterNode | SceneNode | TextNode> = [ch];
 
-  // Only scenes under chapter
-  const sceneIds = (story.childrenOrder[chapter.id] ?? []).filter(
-    (id) => story.nodeMap[id]?.type === "scene"
-  );
-
-  sceneIds.forEach((sceneId) => {
-    const scene = story.nodeMap[sceneId];
-    if (!scene || scene.type !== "scene") return;
-
-    orderedNodes.push({ node: scene, chapterColor });
-
-    // Only texts under scene
-    const textIds = (story.childrenOrder[scene.id] ?? []).filter(
-      (id) => story.nodeMap[id]?.type === "text"
+    const sceneIds = (story.childrenOrder[ch.id] ?? []).filter(
+      (id) => story.nodeMap[id]?.type === "scene"
     );
 
-    textIds.forEach((textId) => {
-      const textNode = story.nodeMap[textId];
-      if (!textNode || textNode.type !== "text") return;
+    sceneIds.forEach((sceneId) => {
+      const sc = story.nodeMap[sceneId];
+      if (!sc || sc.type !== "scene") return;
 
-      orderedNodes.push({ node: textNode, chapterColor });
+      chain.push(sc);
+
+      const textIds = (story.childrenOrder[sc.id] ?? []).filter(
+        (id) => story.nodeMap[id]?.type === "text"
+      );
+      textIds.forEach((tid) => {
+        const tn = story.nodeMap[tid];
+        if (tn && tn.type === "text") chain.push(tn);
+      });
     });
-  });
-});
 
-  /**
-   * Build a quick lookup map of all nodes for media linking
-   */
+    chapterChains.push({ color, chain });
+  });
+
   const allNodes = story.nodeMap;
+
+  // Small helper to draw a nice cubic curve
+  const curvePath = (x1: number, y1: number, x2: number, y2: number) => {
+    const midX = (x1 + x2) / 2;
+    return `M ${x1},${y1} C ${midX},${y1} ${midX},${y2} ${x2},${y2}`;
+  };
+
+  const centerX = (n: NodeData) => n.position.x + 300;
+  const centerY = (n: NodeData) => n.position.y + 30;
 
   return (
     <svg
@@ -79,40 +80,63 @@ story.order.forEach((chapterId, chapterIndex) => {
       }}
     >
       <g transform="translate(1000, 1000)">
-        {/* Outline sequential connections */}
-        {orderedNodes.map((entry, idx) => {
-          if (idx === orderedNodes.length - 1) return null;
-          const { node, chapterColor } = entry;
-          const nextNode = orderedNodes[idx + 1].node;
+        {/* Intra-chapter connections (no cross-chapter chaining) */}
+        {chapterChains.map(({ chain, color }) =>
+          chain.map((node, idx) => {
+            const next = chain[idx + 1];
+            if (!next) return null;
 
-          const x1 = node.position.x + 300;
-          const y1 = node.position.y + 30;
-          const x2 = nextNode.position.x + 300;
-          const y2 = nextNode.position.y + 30;
+            const x1 = centerX(node);
+            const y1 = centerY(node);
+            const x2 = centerX(next);
+            const y2 = centerY(next);
 
-          const midX = (x1 + x2) / 2;
-          const d = `M ${x1},${y1} C ${midX},${y1} ${midX},${y2} ${x2},${y2}`;
+            return (
+              <path
+                key={`${node.id}-${next.id}`}
+                d={curvePath(x1, y1, x2, y2)}
+                stroke={color}
+                strokeOpacity={0.6}
+                strokeWidth="2"
+                fill="none"
+              />
+            );
+          })
+        )}
+
+        {/* Chapter-to-chapter connections (chapter i -> chapter i+1) */}
+        {chapterChains.map((entry, idx) => {
+          const next = chapterChains[idx + 1];
+          if (!next) return null;
+
+          const a = entry.chain[0]; // chapter node
+          const b = next.chain[0];  // next chapter node
+          if (!a || !b || a.type !== "chapter" || b.type !== "chapter") return null;
+
+          const x1 = centerX(a);
+          const y1 = centerY(a);
+          const x2 = centerX(b);
+          const y2 = centerY(b);
 
           return (
             <path
-              key={`${node.id}-${nextNode.id}`}
-              d={d}
-              stroke={chapterColor}
-              strokeOpacity={0.6}
-              strokeWidth="2"
+              key={`chapter-${a.id}-${b.id}`}
+              d={curvePath(x1, y1, x2, y2)}
+              stroke={entry.color}          
+              strokeOpacity={0.8}
+              strokeWidth="2.5"
               fill="none"
             />
           );
         })}
 
-        {/* Picture/Annotation/Event connections */}
-        {Object.values(story.nodeMap)
+        {/* Picture/Annotation/Event dashed connections (unchanged) */}
+        {Object.values(allNodes)
           .filter(
             (n): n is PictureNode | AnnotationNode | EventNode =>
               n.type === "picture" || n.type === "annotation" || n.type === "event"
           )
           .map((node) => {
-            // NEW: prefer explicit connectedTo, else use parentId
             const targetId = (node as any).connectedTo ?? (node as any).parentId;
             if (!targetId) return null;
 
@@ -123,19 +147,17 @@ story.order.forEach((chapterId, chapterIndex) => {
               node.type === "picture"
                 ? node.position.x + 100
                 : node.type === "event"
-                  ? node.position.x + 260
-                  : node.position.x + 125;
+                ? node.position.x + 260
+                : node.position.x + 125;
             const y1 = node.position.y + 40;
-            const x2 = target.position.x + 300;
-            const y2 = target.position.y + 30;
-            const midX = (x1 + x2) / 2;
 
-            const d = `M ${x1},${y1} C ${midX},${y1} ${midX},${y2} ${x2},${y2}`;
+            const x2 = centerX(target);
+            const y2 = centerY(target);
 
             return (
               <path
                 key={`${node.id}-connect-${target.id}`}
-                d={d}
+                d={curvePath(x1, y1, x2, y2)}
                 stroke="var(--color-nodeConnection)"
                 strokeOpacity={0.8}
                 strokeWidth="1.5"

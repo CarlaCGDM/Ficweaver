@@ -91,9 +91,10 @@ export default function ChapterNode(
           zIndex: 80,
           position: "absolute",
           opacity: dim ? 0.35 : 1,
-          outline: hilite ? "4px dashed var(--color-accent)" : undefined,
+          outline: hilite ? `4px dashed ${resolvedChapterColor}` : undefined,
           outlineOffset: hilite ? 2 : undefined,
           cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
+          filter: hilite ? "brightness(1.25)" : undefined,
         }}
       >
         {/* Subtle color wash */}

@@ -1,15 +1,17 @@
+// src/components/Editor/ProjectIO/exportProjectAsZip.ts
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import type { Story } from "../../../../context/storyStore/types";
 import { useImageStore } from "../../../../context/imageStore/imageStore";
 
 /**
- * Exports the story and associated images as a .zip file.
+ * Exports the story (flat shape) and associated images as a .zip file.
  */
 export const exportProjectAsZip = async (story: Story) => {
   console.log("📦 [Export] Export triggered");
   console.log("📦 [Export] Story title:", story.title);
-  console.log("📦 [Export] Chapters count:", story.chapters.length);
+  console.log("📦 [Export] Top-level chapters:", story.order.length);
+  console.log("📦 [Export] nodeMap size:", Object.keys(story.nodeMap).length);
 
   const { imageMap } = useImageStore.getState();
   console.log("🖼 [Export] Images in store:", Object.keys(imageMap));
@@ -17,7 +19,7 @@ export const exportProjectAsZip = async (story: Story) => {
   try {
     const zip = new JSZip();
 
-    // ✅ Add JSON story data
+    // ✅ Add JSON story data (flat)
     const storyFileName = `story.json`;
     console.log("📄 [Export] Adding JSON file:", storyFileName);
     zip.file(storyFileName, JSON.stringify(story, null, 2));
@@ -28,12 +30,12 @@ export const exportProjectAsZip = async (story: Story) => {
       console.warn("⚠ [Export] Could not create images folder in ZIP");
     }
 
-    // ✅ Process each image
+    // ✅ Process each image (keyed by picture node id)
     for (const [nodeId, base64Data] of Object.entries(imageMap)) {
       if (!base64Data) continue;
 
       // Extract MIME type & extension
-      const mimeMatch = base64Data.match(/^data:(image\/[a-zA-Z]+);base64,/);
+      const mimeMatch = base64Data.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/);
       const extension = mimeMatch ? mimeMatch[1].split("/")[1] : "png";
 
       console.log(`🖼 [Export] Adding image: ${nodeId}.${extension}`);

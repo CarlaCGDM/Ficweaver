@@ -12,6 +12,7 @@ export default function PictureNode({
   onMouseDown,
   onEditNode,
   focusedNodeId,
+  isConnectMode,
 }: NodeProps & { focusedNodeId?: string }) {
   const pictureNode = node as PictureNodeType;
   const isFocused = focusedNodeId === node.id;
@@ -56,6 +57,7 @@ export default function PictureNode({
         boxShadow: "var(--node-shadow)",
         padding: "6px",
         zIndex: 100,
+        opacity: isConnectMode ? 0.35 : 1,
       }}
     >
       <NodeActions nodeId={node.id} onEditNode={onEditNode} />

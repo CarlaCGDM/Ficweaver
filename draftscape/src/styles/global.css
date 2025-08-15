@@ -75,6 +75,9 @@ h6 {
   font-family: var(--font-ui);
 }
 
+a {
+  color: var(--color-accent);
+}
 
 
 /* Buttons */
@@ -133,7 +136,7 @@ textarea::placeholder {
 
 .main-layout {
   display: flex;
-  height: 100vh;
+  height: 95vh;
   overflow: hidden;
 }
 
@@ -156,6 +159,7 @@ textarea::placeholder {
   flex: 0 0 50vw;
   overflow: hidden;
   position: relative;
+  height: 88.5vh;
 }
 
 .canvas-container.editor-expanded {

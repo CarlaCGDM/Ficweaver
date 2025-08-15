@@ -10,6 +10,7 @@ export const editorContainer: CSSProperties = {
   lineHeight: "1.5",
   borderLeft: "1px solid var(--color-border)",
   background: "var(--color-bg)",
+  position: "relative" 
 };
 
 /* Word count / meta line */

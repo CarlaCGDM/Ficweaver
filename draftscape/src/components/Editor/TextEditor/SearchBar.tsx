@@ -1,27 +1,45 @@
+// src/components/Editor/TextEditor/SearchBar.tsx
 import React, { useState, useMemo, useRef } from "react";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
-import { Search, X, ChevronDown } from "lucide-react"; // ✅ Lucide icons
+import type { Story, NodeData, TextNode, EventNode } from "../../../context/storyStore/types";
+import { Search, X, ChevronDown } from "lucide-react";
 
 interface SearchBarProps {
-  onSearch: (results: { chapters: string[]; textNodes: string[]; eventNodes: string[]; searchQuery?: string }, reset?: boolean) => void;
+  onSearch: (results: {
+    chapters: string[];
+    textNodes: string[];
+    eventNodes: string[];
+    searchQuery?: string;
+  }, reset?: boolean) => void;
+}
+
+// --- helpers (flat structure) ---
+const lc = (s: string | undefined | null) => (s ?? "").toLowerCase();
+
+function chapterAncestorId(story: Story, nodeId: string): string | null {
+  let cur: string | null = nodeId;
+  while (cur) {
+    const n: NodeData | undefined = story.nodeMap[cur];
+    if (!n) return null;
+    if (n.type === "chapter") return n.id;
+    cur = n.parentId;
+  }
+  return null;
 }
 
 export default function SearchBar({ onSearch }: SearchBarProps) {
   const story = useStoryStore((state) => state.story);
 
+  // All tags from text + event nodes
   const allTags = useMemo(() => {
     const tags = new Set<string>();
-    story.chapters.forEach((ch) =>
-      ch.scenes.forEach((sc) =>
-        sc.nodes.forEach((n) => {
-          if ((n.type === "text" || n.type === "event") && n.tags) {
-            n.tags.forEach((t) => tags.add(t));
-          }
-        })
-      )
-    );
-    return Array.from(tags);
-  }, [story]);
+    for (const n of Object.values(story.nodeMap)) {
+      if ((n.type === "text" || n.type === "event") && (n as any).tags) {
+        (n as any).tags!.forEach((t: string) => tags.add(t));
+      }
+    }
+    return Array.from(tags).sort((a, b) => a.localeCompare(b));
+  }, [story.nodeMap]);
 
   const [query, setQuery] = useState("");
   const [chips, setChips] = useState<string[]>([]);
@@ -31,12 +49,12 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
 
   const filteredTags = useMemo(() => {
     if (!query.startsWith("[")) return [];
-    const q = query.slice(1).toLowerCase();
-    return allTags.filter((t) => t.toLowerCase().startsWith(q) && !chips.includes(t));
+    const q = lc(query.slice(1));
+    return allTags.filter((t) => lc(t).startsWith(q) && !chips.includes(t));
   }, [query, allTags, chips]);
 
   const handleAddChip = (tag: string) => {
-    setChips([...chips, tag]);
+    setChips((prev) => [...prev, tag]);
     setQuery("");
     setShowDropdown(false);
   };
@@ -50,42 +68,64 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
   };
 
   const handleSearch = () => {
-    const textTerm = query.trim().toLowerCase();
+    const textTerm = lc(query.trim());
 
-    const results: { chapters: string[]; textNodes: string[]; eventNodes: string[]; searchQuery?: string } = {
-      chapters: [],
-      textNodes: [],
-      eventNodes: [],
+    const results = {
+      chapters: [] as string[],
+      textNodes: [] as string[],
+      eventNodes: [] as string[],
       searchQuery: textTerm,
     };
 
-    story.chapters.forEach((ch) => {
-      let chapterHasMatch = false;
-      ch.scenes.forEach((sc) => {
-        sc.nodes.forEach((n) => {
-          const matchesTagAll = chips.every((chip) => n.tags?.includes(chip));
-          const matchesTagAny = chips.some((chip) => n.tags?.includes(chip));
+    const chapterSet = new Set<string>();
 
-          const matchesText =
-            !textTerm ||
-            (n.type === "text" && (n.text.toLowerCase().includes(textTerm) || n.summary?.toLowerCase().includes(textTerm))) ||
-            (n.type === "event" && (n.title?.toLowerCase().includes(textTerm) || n.tags?.some((t) => t.toLowerCase().includes(textTerm))));
+    const matchesTags = (node: NodeData) => {
+      const nodeTags = (node as any).tags as string[] | undefined;
+      if (!chips.length) return true; // no tag filter
+      if (!nodeTags || nodeTags.length === 0) return false;
+      if (mode === "all") return chips.every((t) => nodeTags.includes(t));
+      return chips.some((t) => nodeTags.includes(t));
+    };
 
-          const matchLogic =
-            mode === "all"
-              ? (!chips.length || matchesTagAll) && (!textTerm || matchesText)
-              : (chips.length && matchesTagAny) || (textTerm && matchesText);
+    const matchesText = (node: NodeData) => {
+      if (!textTerm) return true; // no text filter
+      if (node.type === "text") {
+        const txt = lc((node as TextNode).text);
+        const sum = lc((node as TextNode).summary);
+        return txt.includes(textTerm) || sum.includes(textTerm);
+      }
+      if (node.type === "event") {
+        const title = lc((node as EventNode).title);
+        const tagHit = ((node as EventNode).tags || []).some((t) => lc(t).includes(textTerm));
+        return title.includes(textTerm) || tagHit;
+      }
+      return false;
+    };
 
-          if (matchLogic) {
-            if (n.type === "text") results.textNodes.push(n.id);
-            if (n.type === "event") results.eventNodes.push(n.id);
-            chapterHasMatch = true;
-          }
-        });
-      });
-      if (chapterHasMatch) results.chapters.push(ch.id);
-    });
+    for (const n of Object.values(story.nodeMap)) {
+      if (n.type !== "text" && n.type !== "event") continue;
 
+      const tagOk = matchesTags(n);
+      const textOk = matchesText(n);
+
+      // "all" = both filters must pass; "any" = either filter can pass
+      const passes =
+        mode === "all"
+          ? tagOk && textOk
+          : (chips.length ? tagOk : false) || (textTerm ? textOk : false);
+
+      if (!passes) continue;
+
+      // collect node id
+      if (n.type === "text") results.textNodes.push(n.id);
+      if (n.type === "event") results.eventNodes.push(n.id);
+
+      // find its chapter ancestor to mark the chapter hit
+      const chId = chapterAncestorId(story, n.id);
+      if (chId) chapterSet.add(chId);
+    }
+
+    results.chapters = Array.from(chapterSet);
     onSearch(results);
   };
 

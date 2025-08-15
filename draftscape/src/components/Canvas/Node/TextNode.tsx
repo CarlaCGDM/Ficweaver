@@ -234,9 +234,10 @@ export default function TextNode(
           zIndex: 100,
           border: "1px solid var(--color-border)",
           opacity: dim ? 0.35 : 1,
-          outline: hilite ? "2px dashed var(--color-accent)" : undefined,
+          outline: hilite ? `4px dashed ${resolvedChapterColor}` : undefined,
           outlineOffset: hilite ? 2 : undefined,
           cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
+          filter: hilite ? "brightness(1.25)" : undefined,
         }}
       >
         <NodeActions nodeId={node.id} onEditNode={onEditNode} />

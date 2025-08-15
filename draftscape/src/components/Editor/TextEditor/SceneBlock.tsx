@@ -1,12 +1,25 @@
-import type { Scene, Chapter, TextNode } from "../../../context/storyStore/types";
+// src/components/Editor/TextEditor/SceneBlock.tsx
+import type { TextNode, NodeData } from "../../../context/storyStore/types";
 import { sceneSeparatorStyle } from "./textEditorStyles";
 import TextNodeBlock from "./TextNodeBlock";
 
+type SceneLike = {
+  id: string;
+  title?: string;
+  description?: string;
+  nodes: NodeData[]; // mixed; we’ll filter text below
+};
+
 interface SceneBlockProps {
-  scene: Scene;
+  scene: SceneLike;
   sceneIndex: number;
-  chapter: Chapter;
+
+  // NEW: we don’t pass a full Chapter object anymore
+  chapterId: string;
+  chapterColor: string;
+
   onFocusNode: (nodeId: string) => void;
+
   hoveredId: string | null;
   setHoveredId: (id: string | null) => void;
   hoveredSceneId: string | null;
@@ -14,9 +27,11 @@ interface SceneBlockProps {
   hoveredChapterId: string | null;
   setHoveredChapterId: (id: string | null) => void;
   setHoveredDetails: (details: any) => void;
+
   nodeRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
   focusedNodeId: string | null;
-  focusedSceneId: string | null; // ✅ NEW
+  focusedSceneId: string | null;
+
   searchResults?: { chapters: string[]; textNodes: string[] };
   searchQuery?: string;
 }
@@ -24,7 +39,8 @@ interface SceneBlockProps {
 export default function SceneBlock({
   scene,
   sceneIndex,
-  chapter,
+  chapterId,
+  chapterColor,
   onFocusNode,
   hoveredId,
   setHoveredId,
@@ -35,11 +51,11 @@ export default function SceneBlock({
   setHoveredDetails,
   nodeRefs,
   focusedNodeId,
-  focusedSceneId, // ✅ RECEIVED
+  focusedSceneId,
   searchResults,
   searchQuery = "",
 }: SceneBlockProps) {
-  // ✅ Filter visible text nodes
+  // Filter visible text nodes only
   const visibleTextNodes: TextNode[] = scene.nodes.filter(
     (n): n is TextNode =>
       n.type === "text" &&
@@ -58,8 +74,9 @@ export default function SceneBlock({
         <TextNodeBlock
           key={txt.id}
           textNode={txt}
-          scene={scene}
-          chapter={chapter}
+          scene={{ id: scene.id, title: scene.title }}
+          chapterId={chapterId}
+          chapterColor={chapterColor}
           onFocusNode={onFocusNode}
           hoveredId={hoveredId}
           setHoveredId={setHoveredId}
@@ -70,7 +87,7 @@ export default function SceneBlock({
           setHoveredDetails={setHoveredDetails}
           nodeRefs={nodeRefs}
           focusedNodeId={focusedNodeId}
-          focusedSceneId={focusedSceneId} // ✅ Pass to text nodes
+          focusedSceneId={focusedSceneId}
           searchQuery={searchQuery}
         />
       ))}

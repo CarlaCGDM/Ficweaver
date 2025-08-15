@@ -10,6 +10,7 @@ export default function EventNode({
   onMouseDown,
   onEditNode,
   focusedNodeId,
+  isConnectMode,
 }: NodeProps & { focusedNodeId?: string }) {
   const eventNode = node as EventNodeType;
   const isFocused = focusedNodeId === node.id;
@@ -52,7 +53,8 @@ export default function EventNode({
         zIndex: 100,
         position: "absolute",
         gap: "6px",
-        
+        opacity: isConnectMode ? 0.35 : 1,
+
       }}
     >
       <NodeActions nodeId={node.id} onEditNode={onEditNode} />

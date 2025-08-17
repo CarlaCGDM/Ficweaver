@@ -57,7 +57,7 @@ export const useStoryStore = create<StoreWithExtras>()(
       // History + misc
       ...undoRedoActions(set, get),
       ...storyTitleActions(set, get),
-      ...genericNodeActions(set,get),
+      ...genericNodeActions(set, get),
 
       // ✅ New CRUD (flat)
       ...chapterActions(set as any, get as any),
@@ -70,7 +70,7 @@ export const useStoryStore = create<StoreWithExtras>()(
       ...annotationActions(set as any, get as any),
 
       // Reparenting
-      ...moveNodeActions(set as any, get as any), 
+      ...moveNodeActions(set as any, get as any),
 
       resetStory: () => {
         const store = get();
@@ -98,7 +98,14 @@ export const useStoryStore = create<StoreWithExtras>()(
         console.log("🆕 [Reset] Blank story set and old state pushed to undo stack");
       },
 
-      
+      setStoryNoHistory: (story) => {
+        // write the new story state WITHOUT touching past/future
+        // (persist middleware will still save it to IndexedDB automatically)
+        set({ story: structuredClone(story) });
+      },
+
+
+
     })) as PersistedStore,
     {
       name: "draftscape-story",

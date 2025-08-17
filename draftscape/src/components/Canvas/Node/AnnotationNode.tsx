@@ -2,7 +2,7 @@ import { useRef, useLayoutEffect, useState } from "react";
 import type { NodeProps } from "./Node";
 import type { AnnotationNode as AnnotationNodeType } from "../../../context/storyStore/types";
 import { baseNodeStyle } from "./nodeStyles";
-import NodeActions from "./NodeActions";
+import NodeActions from "./NodeActions/NodeActions";
 
 export default function AnnotationNode({
   node,
@@ -12,6 +12,7 @@ export default function AnnotationNode({
   onEditNode,
   isConnectMode,
   focusedNodeId,
+  isConnectSource,
 }: NodeProps & { focusedNodeId?: string }) {
   const annotationNode = node as AnnotationNodeType;
   const isFocused = focusedNodeId === node.id;
@@ -67,7 +68,7 @@ export default function AnnotationNode({
         border: "1px solid var(--color-warningBorder)",
         boxShadow: "var(--node-shadow)",
 
-        opacity: isConnectMode ? 0.35 : 1,
+        opacity: isConnectMode && !isConnectSource ? 0.35 : 1,
 
         width: 250,
         minHeight: 100,

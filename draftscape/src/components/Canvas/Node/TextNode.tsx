@@ -9,11 +9,18 @@ import type {
   Story,
 } from "../../../context/storyStore/types";
 import { baseNodeStyle, miniHeaderStyle } from "./nodeStyles";
-import NodeActions from "./NodeActions";
+import NodeActions from "./NodeActions/NodeActions";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
 import { useTheme } from "../../../context/themeProvider/ThemeProvider";
 import { useNodeMetricsStore } from "../../../context/uiStore/nodeMetricsStore";
 import StickerOverlay from "./StickerOverlay";
+import {
+  applyTextDeltaWithinChapter,
+  findParentSceneId,
+  findChapterOfScene,
+} from "../../../context/storyStore/layoutShifts";
+import { useLayoutStore } from "../../../context/uiStore/layoutStore";
+
 
 // ---------- color helpers (no visual change)
 function resolveColor(input?: string | number): string {
@@ -24,29 +31,6 @@ function resolveColor(input?: string | number): string {
 const softTint = (color: string, pct = 35) =>
   `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 
-// ---------- flat-store helpers
-function findParentSceneId(story: Story, nodeId: string): string | null {
-  for (const [parentId, childIds] of Object.entries(story.childrenOrder)) {
-    if (childIds?.includes(nodeId)) {
-      const parent = story.nodeMap[parentId];
-      if (parent && parent.type === "scene") return parentId;
-    }
-  }
-  return null;
-}
-
-function findChapterOfScene(story: Story, sceneId: string): string | null {
-  for (const chId of story.order) {
-    const kids = story.childrenOrder[chId] ?? [];
-    if (kids.includes(sceneId)) return chId;
-  }
-  return null;
-}
-
-function subsequentIds<T extends string>(arr: T[], id: T): T[] {
-  const idx = arr.indexOf(id);
-  return idx >= 0 ? arr.slice(idx + 1) : [];
-}
 
 export default function TextNode(
   props: NodeProps & { focusedNodeId?: string }
@@ -59,6 +43,9 @@ export default function TextNode(
     onMouseDown,
     onEditNode,
     focusedNodeId,
+    isConnectMode,
+    isValidConnectTarget,
+    isConnectSource,
   } = props;
 
   const textNode = node as TextNodeType;
@@ -84,128 +71,99 @@ export default function TextNode(
   const nodeRef = useRef<HTMLDivElement>(null);
 
   // connect-mode visuals
-  const dim = props.isConnectMode && !props.isValidConnectTarget;
+  const dim = props.isConnectMode && !props.isValidConnectTarget && !props.isConnectSource;
   const hilite = props.isConnectMode && props.isValidConnectTarget;
 
   // metrics + shifting (single observer)
+  // flags stored per-node just for the first-time shift (set by actions on create*)
+  const needsInitialShift = (textNode as any)?.pendingInitialShift === true;
+
+  // metrics size updater
   const setNodeSize = useNodeMetricsStore((s) => s.setNodeSize);
+
+  // refs for resize-driven shifting
   const prevHeightRef = useRef(0);
   const lastShiftDeltaRef = useRef(0);
   const lastThemeRef = useRef({ themeId, mode });
+
+  const setStoryNoHistory = useStoryStore((s) => s.setStoryNoHistory);
+  const suppressAutoLayout = useLayoutStore((s) => s.suppressAutoLayout);
+
+
 
   useLayoutEffect(() => {
     const el = nodeRef.current;
     if (!el) return;
 
-    const updateOnResize = () => {
-      // 1) publish live size
-      const newHeight = el.offsetHeight;
-      setNodeSize(node.id, { width: el.offsetWidth, height: newHeight });
+    const run = () => {
+      const newH = el.offsetHeight;
 
-      // 2) shift logic
-      const prevHeight = prevHeightRef.current;
-      const deltaY = newHeight - prevHeight;
+      // always publish live size
+      setNodeSize(node.id, { width: el.offsetWidth, height: newH });
 
-      // Avoid shifting on theme/font changes (layout-only)
-      if (lastThemeRef.current.themeId !== themeId || lastThemeRef.current.mode !== mode) {
+      // ⛔ During undo/redo: don't apply any shift deltas, just reset baselines.
+      if (suppressAutoLayout) {
+        prevHeightRef.current = newH;
+        lastShiftDeltaRef.current = 0;
         lastThemeRef.current = { themeId, mode };
-        prevHeightRef.current = newHeight;
         return;
       }
 
-      // Only shift when actual content height changes (and not repeating last delta)
-      if (prevHeight > 0 && deltaY !== 0) {
-        if (Math.abs(deltaY) === Math.abs(lastShiftDeltaRef.current)) {
-          prevHeightRef.current = newHeight;
-          return;
-        }
+      const prev = prevHeightRef.current;
+      const deltaY = newH - prev;
 
-        // Mutate a shallow copy
-        const s: Story = {
+      // First-time shift right after insertion
+      if (prev === 0 && needsInitialShift && newH > 0) {
+        const s = {
           title: story.title,
           nodeMap: { ...story.nodeMap },
           order: [...story.order],
-          childrenOrder: Object.fromEntries(
-            Object.entries(story.childrenOrder).map(([k, v]) => [k, [...(v ?? [])]])
-          ),
-        };
+          childrenOrder: Object.fromEntries(Object.entries(story.childrenOrder).map(([k, v]) => [k, [...(v ?? [])]])),
+        } as Story;
 
-        // 1) shift subsequent TEXT siblings in the same scene
-        if (sceneId) {
-          const siblings = s.childrenOrder[sceneId] ?? [];
-          const after = subsequentIds(siblings, node.id);
-          for (const sibId of after) {
-            const sib = s.nodeMap[sibId];
-            if (sib && sib.type === "text") {
-              s.nodeMap[sibId] = {
-                ...sib,
-                position: { x: sib.position.x, y: sib.position.y + deltaY },
-              };
-            }
-          }
-        }
+        applyTextDeltaWithinChapter(s, node.id, newH);
 
-        // 2) shift subsequent SCENES within chapter (all nodes in those scenes move down)
-        if (chapterId) {
-          const scenesInChapter = s.childrenOrder[chapterId] ?? [];
-          const afterScenes = sceneId ? subsequentIds(scenesInChapter, sceneId) : [];
-          for (const scId of afterScenes) {
-            const childIds = s.childrenOrder[scId] ?? [];
-            for (const cid of childIds) {
-              const child = s.nodeMap[cid];
-              if (!child) continue;
-              s.nodeMap[cid] = {
-                ...child,
-                position: { x: child.position.x, y: child.position.y + deltaY },
-              };
-            }
-          }
-        }
+        // clear the flag on this node
+        const n = s.nodeMap[node.id];
+        s.nodeMap[node.id] = { ...n, pendingInitialShift: false } as any;
 
-        // 3) shift subsequent CHAPTERS (their chapter node + all scenes + children)
-        if (chapterId) {
-          const idx = s.order.indexOf(chapterId);
-          const afterChapters = idx >= 0 ? s.order.slice(idx + 1) : [];
-          for (const chId of afterChapters) {
-            const chNode = s.nodeMap[chId];
-            if (chNode && chNode.type === "chapter") {
-              s.nodeMap[chId] = {
-                ...chNode,
-                position: { x: chNode.position.x, y: chNode.position.y + deltaY },
-              };
-            }
-            const scenesOfCh = s.childrenOrder[chId] ?? [];
-            for (const scId of scenesOfCh) {
-              const scChildren = s.childrenOrder[scId] ?? [];
-              for (const cid of scChildren) {
-                const c = s.nodeMap[cid];
-                if (!c) continue;
-                s.nodeMap[cid] = {
-                  ...c,
-                  position: { x: c.position.x, y: c.position.y + deltaY },
-                };
-              }
-            }
-          }
-        }
+        setStoryNoHistory(s);
+        prevHeightRef.current = newH;
+        lastShiftDeltaRef.current = newH;
+        return;
+      }
 
-        setStory(s);
+      // Ignore theme-only relayouts
+      if (lastThemeRef.current.themeId !== themeId || lastThemeRef.current.mode !== mode) {
+        lastThemeRef.current = { themeId, mode };
+        prevHeightRef.current = newH;
+        return;
+      }
+
+      // Live content growth/shrink
+      if (prev > 0 && deltaY !== 0) {
+        const s = {
+          title: story.title,
+          nodeMap: { ...story.nodeMap },
+          order: [...story.order],
+          childrenOrder: Object.fromEntries(Object.entries(story.childrenOrder).map(([k, v]) => [k, [...(v ?? [])]])),
+        } as Story;
+
+        applyTextDeltaWithinChapter(s, node.id, deltaY);
+        setStoryNoHistory(s);
         lastShiftDeltaRef.current = deltaY;
       }
 
-      prevHeightRef.current = newHeight;
+      prevHeightRef.current = newH;
     };
 
-    // initial + observe changes
-    updateOnResize();
-    const ro = new ResizeObserver(updateOnResize);
+    run();
+    const ro = new ResizeObserver(run);
     ro.observe(el);
     return () => ro.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [story, node.id, sceneId, chapterId, themeId, mode, setNodeSize]);
+  }, [story, node.id, themeId, mode, setNodeSize, needsInitialShift]);
 
-  console.log(stickerBasePath)
-  console.log(textNode.sticker)
 
   return (
     <>
@@ -234,10 +192,10 @@ export default function TextNode(
           zIndex: 100,
           border: "1px solid var(--color-border)",
           opacity: dim ? 0.35 : 1,
-          outline: hilite ? `4px dashed ${resolvedChapterColor}` : undefined,
+          //outline: hilite ? `4px dashed ${resolvedChapterColor}` : undefined,
           outlineOffset: hilite ? 2 : undefined,
           cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
-          filter: hilite ? "brightness(1.25)" : undefined,
+          filter: hilite ? "saturate(1.5)" : undefined,
         }}
       >
         <NodeActions nodeId={node.id} onEditNode={onEditNode} />

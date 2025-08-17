@@ -1,7 +1,7 @@
 import type { NodeProps } from "./Node";
 import type { EventNode as EventNodeType } from "../../../context/storyStore/types";
 import { baseNodeStyle } from "./nodeStyles";
-import NodeActions from "./NodeActions";
+import NodeActions from "./NodeActions/NodeActions";
 
 export default function EventNode({
   node,
@@ -11,6 +11,7 @@ export default function EventNode({
   onEditNode,
   focusedNodeId,
   isConnectMode,
+  isConnectSource,
 }: NodeProps & { focusedNodeId?: string }) {
   const eventNode = node as EventNodeType;
   const isFocused = focusedNodeId === node.id;
@@ -53,7 +54,7 @@ export default function EventNode({
         zIndex: 100,
         position: "absolute",
         gap: "6px",
-        opacity: isConnectMode ? 0.35 : 1,
+        opacity: isConnectMode && !isConnectSource ? 0.35 : 1,
 
       }}
     >

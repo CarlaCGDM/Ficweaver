@@ -27,6 +27,7 @@ export interface NodeProps {
   // Connecting
   isConnectMode?: boolean;
   isValidConnectTarget?: boolean;
+  isConnectSource?: boolean;       
 }
 
 export default function Node(props: NodeProps) {

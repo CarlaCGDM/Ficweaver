@@ -1,10 +1,13 @@
 import type { NodeProps } from "./Node";
 import type { ChapterNode as ChapterNodeType, NodeData } from "../../../context/storyStore/types";
 import { baseNodeStyle, headerStyle } from "./nodeStyles";
-import NodeActions from "./NodeActions";
+import NodeActions from "./NodeActions/NodeActions";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
 import { useNodeMetricsStore } from "../../../context/uiStore/nodeMetricsStore";
-import { useRef, useLayoutEffect } from "react";
+import { useRef, useLayoutEffect, useRef as useRefType } from "react";
+import { applyChapterDelta } from "../../../context/storyStore/layoutShifts";
+import { useTheme } from "../../../context/themeProvider/ThemeProvider";
+import { useLayoutStore } from "../../../context/uiStore/layoutStore";
 
 /** Normalize chapter color */
 function resolveChapterColor(input?: string | number): string {
@@ -31,6 +34,7 @@ export default function ChapterNode(
     focusedNodeId,
     isConnectMode,
     isValidConnectTarget,
+    isConnectSource
   } = props;
 
   const chapterNode = node as ChapterNodeType;
@@ -39,8 +43,12 @@ export default function ChapterNode(
   const isFocused = focusedNodeId === node.id;
   const baseStyle = baseNodeStyle(isInDragGroup, glowColor);
 
+  const { themeId, mode } = useTheme(); // guard against theme-driven relayouts
+  const suppressAutoLayout = useLayoutStore((s) => s.suppressAutoLayout);
+
   // ✅ Access story and get children from flat structure
   const story = useStoryStore((state) => state.story);
+  const setStoryNoHistory = useStoryStore((s) => s.setStoryNoHistory);
 
   // Children of this chapter (scenes, media, etc.)
   const childIds = story.childrenOrder[node.id] ?? [];
@@ -53,33 +61,78 @@ export default function ChapterNode(
     );
 
 
-  // ⬇️ NEW: publish live width/height to metrics store
+  // metrics + measurement
   const setNodeSize = useNodeMetricsStore((s) => s.setNodeSize);
   const nodeRef = useRef<HTMLDivElement>(null);
+
+  // track for delta-based shifts
+  const prevHeightRef = useRef(0);
+  const lastShiftDeltaRef = useRef(0);
+  const lastThemeRef = useRef({ themeId, mode });
 
   useLayoutEffect(() => {
     const el = nodeRef.current;
     if (!el) return;
 
-    const report = () => {
-      setNodeSize(node.id, { width: el.offsetWidth, height: el.offsetHeight });
+    const run = () => {
+      const newH = el.offsetHeight;
+
+      // always publish metrics
+      setNodeSize(node.id, { width: el.offsetWidth, height: newH });
+
+      // pause auto layout during undo/redo
+      if (suppressAutoLayout) {
+        prevHeightRef.current = newH;
+        lastShiftDeltaRef.current = 0;
+        lastThemeRef.current = { themeId, mode };
+        return;
+      }
+
+      const prev = prevHeightRef.current;
+      const deltaY = newH - prev;
+
+      // ignore theme-only relayouts
+      if (lastThemeRef.current.themeId !== themeId || lastThemeRef.current.mode !== mode) {
+        lastThemeRef.current = { themeId, mode };
+        prevHeightRef.current = newH;
+        return;
+      }
+
+      if (prev > 0 && deltaY !== 0) {
+        const s: typeof story = {
+          title: story.title,
+          nodeMap: { ...story.nodeMap },
+          order: [...story.order],
+          childrenOrder: Object.fromEntries(
+            Object.entries(story.childrenOrder).map(([k, v]) => [k, [...(v ?? [])]])
+          ),
+        };
+
+        // shift this chapter’s *children* by deltaY (scenes and everything under them)
+        applyChapterDelta(s, node.id, deltaY);
+
+        setStoryNoHistory(s);
+        lastShiftDeltaRef.current = deltaY;
+      }
+
+      prevHeightRef.current = newH;
     };
 
-    // initial + observe changes
-    report();
-    const ro = new ResizeObserver(report);
+    run();
+    const ro = new ResizeObserver(run);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [node.id, setNodeSize]);
+  }, [story, node.id, setNodeSize, themeId, mode, suppressAutoLayout, setStoryNoHistory]);
 
   // connect
-  const dim = isConnectMode && !isValidConnectTarget;
+  const dim = isConnectMode && !isValidConnectTarget && !isConnectSource;
   const hilite = isConnectMode && isValidConnectTarget;
 
   return (
     <>
       <div
         data-node-id={node.id}
+        ref={nodeRef}
         onMouseDown={(e) => onMouseDown(e, node.id, node.position.x, node.position.y)}
         style={{
           ...baseStyle,
@@ -91,10 +144,10 @@ export default function ChapterNode(
           zIndex: 80,
           position: "absolute",
           opacity: dim ? 0.35 : 1,
-          outline: hilite ? `4px dashed ${resolvedChapterColor}` : undefined,
+          //outline: hilite ? `4px dashed ${resolvedChapterColor}` : undefined,
           outlineOffset: hilite ? 2 : undefined,
           cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
-          filter: hilite ? "brightness(1.25)" : undefined,
+          filter: hilite ? "saturate(1.5)" : undefined,
         }}
       >
         {/* Subtle color wash */}

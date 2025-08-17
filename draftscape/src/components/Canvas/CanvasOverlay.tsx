@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useStoryStore } from "../../context/storyStore/storyStore";
 import { Undo2, Redo2, Hand, MousePointer, Move, X, ZoomIn, Maximize } from "lucide-react";
 import { PiQuestionMarkLight } from "react-icons/pi";
+import { useConnectStore } from "../../context/uiStore/connectStore";
+import { Route } from "lucide-react";
+
 
 interface CanvasOverlayProps {
   onResetView: () => void;
@@ -18,6 +21,8 @@ export default function CanvasOverlay({
   const redo = useStoryStore((s) => s.redo);
   const past = useStoryStore((s) => s.past ?? []);
   const future = useStoryStore((s) => s.future ?? []);
+
+  const { isConnecting } = useConnectStore();
 
   const [showGuide, setShowGuide] = useState(false);
 
@@ -55,6 +60,67 @@ export default function CanvasOverlay({
         zIndex: 1000,
       }}
     >
+
+      {/* 🚦 Connection mode banner (Top-Center) */}
+      <div
+        aria-live="polite"
+        role="status"
+        style={{
+          position: "absolute",
+          top: "12px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          pointerEvents: "none",
+          zIndex: 1001,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            background: "var(--color-bg)",
+            color: "var(--color-text)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "8px",
+            boxShadow: "var(--node-shadow)",
+            fontFamily: "var(--font-ui)",
+            fontSize: "13px",
+            padding: "8px 12px",
+
+            // smooth appear/disappear
+            opacity: isConnecting ? 1 : 0,
+            transform: `translateX(-50%) translateY(${isConnecting ? "0" : "-6px"})`,
+            transition: "opacity 150ms ease, transform 150ms ease",
+            // make sure we don’t accidentally capture clicks
+            pointerEvents: "none",
+          }}
+        >
+          <Route size={16} style={{ opacity: 0.9 }} />
+          <span style={{ opacity: 0.9 }}>Connection mode</span>
+          <span style={{ opacity: 0.6 }}>·</span>
+          <span>
+            Press{" "}
+            <span
+              style={{
+                display: "inline-block",
+                padding: "2px 6px",
+                border: "1px solid var(--color-border)",
+                borderRadius: "4px",
+                background: "var(--color-panel)",
+                fontSize: "12px",
+                lineHeight: 1,
+              }}
+            >
+              ESC
+            </span>{" "}
+            to exit
+          </span>
+        </div>
+      </div>
+
+
+
       {/* 🔄 Undo/Redo (Top Right) */}
       <div
         style={{

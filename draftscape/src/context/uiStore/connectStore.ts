@@ -92,6 +92,34 @@ export function computeTargets(story: Story, sourceId: string): Record<string, M
   return out;
 }
 
+function stripHtml(s: string | undefined): string {
+  if (!s) return "";
+  return s.replace(/<[^>]*>/g, "");
+}
+
+function displayName(x: NodeData): string {
+  switch (x.type) {
+    case "chapter":
+    case "scene":
+      return x.title?.trim() || x.type;
+    case "event":
+      return x.title?.trim() || "Event";
+    case "text":
+      // Prefer summary, else first bit of plain text
+      return x.summary?.trim()
+        || stripHtml(x.text).trim().slice(0, 40) || "Text";
+    case "picture":
+      return x.description?.trim() || "Picture";
+    case "annotation":
+      return stripHtml(x.text).trim().slice(0, 40) || "Annotation";
+     default: {
+      // exhaustive check for future node types
+      const _exhaustive: never = x;
+      return "node";
+    }
+  }
+}
+
 export const useConnectStore = create<ConnectState>((set, get) => ({
   isConnecting: false,
   sourceId: null,
@@ -111,7 +139,7 @@ export const useConnectStore = create<ConnectState>((set, get) => ({
 
     // Friendly confirm
     const label = (() => {
-      const name = (x: NodeData) => x.title ?? (x as any).description ?? x.type;
+      const name = (x: NodeData) => displayName(x);
       switch (src.type) {
         case "chapter": return `Insert chapter "${name(src)}" after "${name(tgt)}"?`;
         case "scene":   return tgt.type === "chapter"

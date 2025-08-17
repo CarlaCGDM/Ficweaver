@@ -1,13 +1,14 @@
 // src/components/Canvas/Node/SceneNode.tsx
 import { useRef, useLayoutEffect, useMemo } from "react";
 import type { NodeProps } from "./Node";
-import type { SceneNode as SceneNodeType, NodeData } from "../../../context/storyStore/types";
+import type { SceneNode as SceneNodeType, NodeData, Story } from "../../../context/storyStore/types";
 import { baseNodeStyle, headerStyle } from "./nodeStyles";
-import NodeActions from "./NodeActions";
+import NodeActions from "./NodeActions/NodeActions";
 import { useStoryStore } from "../../../context/storyStore/storyStore";
-
-// ⬇️ NEW: metrics store import
 import { useNodeMetricsStore } from "../../../context/uiStore/nodeMetricsStore";
+import { useLayoutStore } from "../../../context/uiStore/layoutStore";
+import { useTheme } from "../../../context/themeProvider/ThemeProvider";
+import { applySceneDeltaWithinChapter } from "../../../context/storyStore/layoutShifts";
 
 /** Accepts string | number | undefined (keeps your tokens working) */
 function resolveColor(input: unknown, fallbackVar: string): string {
@@ -32,6 +33,9 @@ export default function SceneNode(
     chapterIndex,
     sceneIndex,
     focusedNodeId,
+    isConnectMode,
+    isValidConnectTarget,
+    isConnectSource,
   } = props;
 
   const sceneNode = node as SceneNodeType;
@@ -39,17 +43,14 @@ export default function SceneNode(
 
   // 🔢 Derive indices if they weren’t provided
   const { derivedChapterIndex, derivedSceneIndex } = useMemo(() => {
-    // parent chapter is stored on the scene in flat model
     const parentChapterId = sceneNode.parentId;
-    let chIdx: number | undefined = undefined;
-    let scIdx: number | undefined = undefined;
+    let chIdx: number | undefined;
+    let scIdx: number | undefined;
 
     if (parentChapterId) {
-      // chapter index from story.order
       const i = story.order.indexOf(parentChapterId);
       if (i >= 0) chIdx = i;
 
-      // scene index among chapter’s scenes
       const siblings = (story.childrenOrder[parentChapterId] ?? [])
         .filter((id) => story.nodeMap[id]?.type === "scene");
       const j = siblings.indexOf(sceneNode.id);
@@ -63,14 +64,14 @@ export default function SceneNode(
   const chIndexToShow = (chapterIndex ?? derivedChapterIndex) ?? undefined;
   const scIndexToShow = (sceneIndex ?? derivedSceneIndex) ?? undefined;
 
-  // ✅ Colors (unchanged visuals)
+  // ✅ Colors
   const resolvedChapterColor = resolveColor(chapterColor, "var(--chapter-color-1)");
   const glowColor = resolvedChapterColor;
 
   const isFocused = focusedNodeId === node.id;
   const baseStyle = baseNodeStyle(isInDragGroup, glowColor);
 
-  // ✅ FLAT STORE: pull children (texts + media) from childrenOrder / nodeMap
+  // ✅ FLAT STORE: children (to render media as before)
   const childIds = story.childrenOrder[node.id] ?? [];
   const attachedMedia = childIds
     .map((id) => story.nodeMap[id])
@@ -79,21 +80,74 @@ export default function SceneNode(
         !!n && (n.type === "picture" || n.type === "annotation" || n.type === "event")
     );
 
-  // publish size to metrics store (unchanged)
-  const setNodeSize = useNodeMetricsStore((s) => s.setNodeSize);
+  // ✅ publish size + shift-on-resize (same pattern as TextNode)
   const nodeRef = useRef<HTMLDivElement>(null);
+  const setNodeSize = useNodeMetricsStore((s) => s.setNodeSize);
+  const setStoryNoHistory = useStoryStore((s) => s.setStoryNoHistory);
+  const suppressAutoLayout = useLayoutStore((s) => s.suppressAutoLayout);
+  const { themeId, mode } = useTheme();
+
+  const prevHeightRef = useRef(0);
+  const lastShiftDeltaRef = useRef(0);
+  const lastThemeRef = useRef({ themeId, mode });
+
   useLayoutEffect(() => {
     const el = nodeRef.current;
     if (!el) return;
-    const report = () => setNodeSize(node.id, { width: el.offsetWidth, height: el.offsetHeight });
-    report();
-    const ro = new ResizeObserver(report);
+
+    const run = () => {
+      const newH = el.offsetHeight;
+
+      // Always publish live size
+      setNodeSize(node.id, { width: el.offsetWidth, height: newH });
+
+      // ⛔ During undo/redo: don't apply any shift deltas, just reset baselines.
+      if (suppressAutoLayout) {
+        prevHeightRef.current = newH;
+        lastShiftDeltaRef.current = 0;
+        lastThemeRef.current = { themeId, mode };
+        return;
+      }
+
+      const prev = prevHeightRef.current;
+      const deltaY = newH - prev;
+
+      // Ignore theme-only relayouts
+      if (lastThemeRef.current.themeId !== themeId || lastThemeRef.current.mode !== mode) {
+        lastThemeRef.current = { themeId, mode };
+        prevHeightRef.current = newH;
+        return;
+      }
+
+      // Shift siblings (and their descendants) within the same chapter on size change
+      if (prev > 0 && deltaY !== 0) {
+        console.log("size changed! shifting siblings and descendants!")
+        const s: Story = {
+          title: story.title,
+          nodeMap: { ...story.nodeMap },
+          order: [...story.order],
+          childrenOrder: Object.fromEntries(
+            Object.entries(story.childrenOrder).map(([k, v]) => [k, [...(v ?? [])]])
+          ),
+        };
+
+        applySceneDeltaWithinChapter(s, sceneNode.id, deltaY);
+        setStoryNoHistory(s);
+        lastShiftDeltaRef.current = deltaY;
+      }
+
+      prevHeightRef.current = newH;
+    };
+
+    run();
+    const ro = new ResizeObserver(run);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [node.id, setNodeSize]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [story, node.id, themeId, mode, setNodeSize, suppressAutoLayout]);
 
-  const dim = props.isConnectMode && !props.isValidConnectTarget;
-  const hilite = props.isConnectMode && props.isValidConnectTarget;
+  const dim = isConnectMode && !isValidConnectTarget && !isConnectSource;
+  const hilite = isConnectMode && isValidConnectTarget;
 
   return (
     <>
@@ -111,10 +165,10 @@ export default function SceneNode(
           zIndex: 90,
           position: "absolute",
           opacity: dim ? 0.35 : 1,
-          outline: hilite ? `4px dashed ${resolvedChapterColor}` : undefined,
+          // outline: hilite ? `4px dashed ${resolvedChapterColor}` : undefined,
           outlineOffset: hilite ? 2 : undefined,
-          cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
-          filter: hilite ? "brightness(1.25)" : undefined,
+          cursor: isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
+          filter: hilite ? "saturate(1.5)" : undefined,
         }}
       >
         {!isFocused && (
@@ -156,6 +210,7 @@ export default function SceneNode(
         </div>
       </div>
 
+      {/* Attached media (unchanged) */}
       {attachedMedia.map((media) => (
         <div
           key={media.id}

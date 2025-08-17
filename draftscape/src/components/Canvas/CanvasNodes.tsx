@@ -30,7 +30,7 @@ export default function CanvasNodes({
   const mouseDownInfoRef = useRef<{ nodeId: string; startPos: { x: number; y: number } } | null>(null);
   const isDraggingRef = useRef(false);
 
-  const { isConnecting, targets, tryComplete, cancelConnect } = useConnectStore();
+  const { isConnecting, targets, tryComplete, cancelConnect, sourceId } = useConnectStore();
   const validSet = new Set(Object.keys(targets));
 
   // ESC to cancel
@@ -145,6 +145,7 @@ export default function CanvasNodes({
           focusedNodeId={focusedNodeId}
           isConnectMode={isConnecting}
           isValidConnectTarget={isConnecting ? validSet.has(node.id) : false}
+          isConnectSource={isConnecting ? sourceId === node.id : false}
         />
         {/* Render children recursively */}
         {(story.childrenOrder[node.id] ?? []).map((childId, idx) =>

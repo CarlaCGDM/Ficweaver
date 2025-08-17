@@ -1,7 +1,7 @@
 import type { NodeProps } from "./Node";
 import type { PictureNode as PictureNodeType } from "../../../context/storyStore/types";
 import { baseNodeStyle } from "./nodeStyles";
-import NodeActions from "./NodeActions";
+import NodeActions from "./NodeActions/NodeActions";
 import { useImageStore } from "../../../context/imageStore/imageStore";
 import { useEffect, useState } from "react";
 
@@ -13,6 +13,7 @@ export default function PictureNode({
   onEditNode,
   focusedNodeId,
   isConnectMode,
+  isConnectSource,
 }: NodeProps & { focusedNodeId?: string }) {
   const pictureNode = node as PictureNodeType;
   const isFocused = focusedNodeId === node.id;
@@ -57,7 +58,7 @@ export default function PictureNode({
         boxShadow: "var(--node-shadow)",
         padding: "6px",
         zIndex: 100,
-        opacity: isConnectMode ? 0.35 : 1,
+        opacity: isConnectMode && !isConnectSource ? 0.35 : 1,
       }}
     >
       <NodeActions nodeId={node.id} onEditNode={onEditNode} />

@@ -107,6 +107,7 @@ export interface StoryState {
   selectedNodeId: string | null;
 
   setStory: (story: Story, skipHistory?: boolean) => void;
+  setStoryNoHistory: (story: StoryState["story"]) => void;
   updateNode: (nodeId: string, updates: Partial<NodeData>) => void;
   updateNodePosition: (nodeId: string, pos: Position, isFromDrag?: boolean) => void;
   updateManyNodePositions: (updates: Array<{ id: string; x: number; y: number }>, isFromDrag?: boolean) => void;

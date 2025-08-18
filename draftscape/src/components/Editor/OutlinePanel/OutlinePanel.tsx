@@ -84,7 +84,9 @@ export default function OutlinePanel({
         <OutlineHeader title={story.title} onEditTitle={handleEditStoryTitle} />
 
         <OutlineControls
-          chapters={chapters}
+          chaptersInOrder={chapters}                 // <-- was `chapters`
+          nodeMap={story.nodeMap}                    // <-- new
+          childrenOrder={story.childrenOrder}        // <-- new
           focusedNodeId={focusedNodeId}
           openChapters={openChapters}
           setOpenChapters={setOpenChapters}
@@ -93,6 +95,7 @@ export default function OutlinePanel({
           showActionButtons={showActionButtons}
           setShowActionButtons={setShowActionButtons}
         />
+
 
         <ul style={{ paddingLeft: 0, margin: 0, listStyle: "none" }}>
           {chapters.map((ch, index) => (

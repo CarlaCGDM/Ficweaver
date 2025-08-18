@@ -208,62 +208,6 @@ export const THEMES: Record<string, ThemeConfig> = {
   },
 
 
-  vampireGoth: {
-    id: "vampireGoth",
-    label: "Vampire Goth",
-    colors: {
-      light: {
-        bg: "#f3f1f4",          // moonlit porcelain
-        panel: "#e7e1ea",       // dusty lilac stone
-        panelAlt: "#d8ceda",    // slightly deeper for stripes/chips
-        text: "#1a1419",        // near-black plum
-        border: "#c7bccb",      // soft pewter
-        accent: "#8e0d2e",      // claret lipstick
-        accentText: "#ffffff",
-        warningBg: "#fde9ef",   // pale rose
-        warningBorder: "#d48ca1",
-        warningText: "#5b1020",
-        nodeConnection: "#6b0f26", // dried-blood thread
-      },
-      dark: {
-        bg: "#0e0b11",          // velvet black
-        panel: "#14131a",       // night shadow
-        panelAlt: "#1b1923",    // aisle shade
-        text: "#e9e4ee",        // porcelain ink
-        border: "#3a3342",      // iron pewter
-        accent: "#d11f45",      // fresh blood red
-        accentText: "#0a0a0e",
-        warningBg: "#341017",   // clotted rose
-        warningBorder: "#6a0d1f",
-        warningText: "#ffd9e1",
-        nodeConnection: "#8f1c3a", // luminous claret tracery
-      },
-    },
-    chapterColors: {
-      light: [
-        "#8e0d2e", // claret
-        "#5a3b8c", // bruised violet
-        "#424248ff", // onyx
-        "#a39aa6", // tarnished silver
-        "#c7b9c9", // antique lace
-      ],
-      dark: [
-        "#d11f6cff", // glowing claret
-        "#b73fb1ff", // electric violet
-        "#2f2f39ff", // hematite
-        "#383d7dff", // ghost lilac
-        "#726363ff", // sanguine blush
-      ],
-    },
-    stickerBasePath: {
-      light: "/stickers/vampire-goth/light",
-      dark: "/stickers/vampire-goth/dark",
-    },
-    fonts: {
-      ui: "Cormorant Garamond, serif",   // elegant, literary serif
-      display: "UnifrakturCook, cursive" // gothic flourish for headings
-    },
-  },
 
 
 

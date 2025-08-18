@@ -144,8 +144,8 @@ export function NodeFormFields({
             listStyle: "none",
             padding: "4px",
             marginTop: "4px",
-            border: "1px solid #ccc",
-            background: "#fff",
+            border: "1px solid var(--color-border)",
+            background: "var(--color-panel)",
             borderRadius: "6px",
             boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
           }}
@@ -157,7 +157,7 @@ export function NodeFormFields({
               style={{
                 padding: "4px 6px",
                 cursor: "pointer",
-                borderBottom: "1px solid #eee",
+                borderBottom: "1px solid var(--color-border)",
               }}
             >
               {tag}

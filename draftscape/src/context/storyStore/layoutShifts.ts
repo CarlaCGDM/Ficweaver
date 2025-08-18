@@ -52,14 +52,22 @@ export function applyTextDeltaWithinChapter(story: Story, textId: string, deltaY
   const chapterId = findChapterOfScene(story, sceneId);
   if (!chapterId) return;
 
-  // 1) Later siblings within the same scene (move subtree of each)
+  // 1) Later siblings within the same scene:
+  //    ✅ shift only TEXT nodes (and their descendants),
+  //    ⛔ DO NOT move scene-level media here.
   const siblings = story.childrenOrder[sceneId] ?? [];
   const idx = siblings.indexOf(textId);
   if (idx >= 0) {
     for (let i = idx + 1; i < siblings.length; i++) {
       const sibId = siblings[i];
-      // Move the sibling node itself + all its descendants (covers media parented to that text)
-      shiftSubtree(story, sibId, deltaY);
+      const sib = story.nodeMap[sibId];
+      if (!sib) continue;
+
+      if (sib.type === "text") {
+        // Move the text node + all its descendants (covers media parented to that text)
+        shiftSubtree(story, sibId, deltaY);
+      }
+      // If it's scene-level media, skip it on text-insert.
     }
   }
 
@@ -74,6 +82,7 @@ export function applyTextDeltaWithinChapter(story: Story, textId: string, deltaY
     }
   }
 }
+
 
 /**
  * (Optional, for scene edits/inserts later)

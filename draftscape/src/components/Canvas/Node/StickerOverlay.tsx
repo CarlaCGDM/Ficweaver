@@ -25,9 +25,6 @@ export default function StickerOverlay({
   const [exists, setExists] = useState(true);
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
-  console.log("i'm being rendered!")
-  console.log(sticker)
-
   useEffect(() => {
     const el = hostRef.current;
     if (!el) return;

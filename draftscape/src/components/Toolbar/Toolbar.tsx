@@ -3,7 +3,7 @@ import { Maximize, Spool, Palette, SunMoon } from "lucide-react";
 import { useTheme } from "../../context/themeProvider/ThemeProvider"; // adjust path
 import "./toolbar.css";
 
-const THEME_OPTIONS = ["default", "manuscript", "typewriter", "notebook", "vampireGoth"] as const;
+const THEME_OPTIONS = ["default", "manuscript", "typewriter", "notebook"] as const;
 type ThemeId = (typeof THEME_OPTIONS)[number];
 
 export default function Toolbar() {

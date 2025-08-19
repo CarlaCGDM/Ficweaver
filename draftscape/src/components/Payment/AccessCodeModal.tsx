@@ -1,7 +1,60 @@
 import { useEffect, useState } from "react";
 
-// ✅ Hardcoded list or pattern
-const VALID_CODES = ["FICWEAVER2024", "DRAFT100", "ACCESSME"];
+// Keep your same localStorage key
+const STORAGE_KEY = "draftscape-access-token";
+
+// Helper: call Gumroad's verify API from the browser
+async function verifyGumroadLicense(licenseKey: string) {
+  const productId = import.meta.env.VITE_GUMROAD_PRODUCT_ID as string;
+if (!productId) {
+  throw new Error("Missing VITE_GUMROAD_PRODUCT_ID");
+}
+
+  // For products made before 2023‑01‑09 you can send product_permalink instead.
+  // But prefer product_id going forward. :contentReference[oaicite:2]{index=2}
+  const body = new URLSearchParams({
+    product_id: productId,
+    license_key: licenseKey.trim(),
+    // By default, verify increments usage count. Set to "false" for non-activating checks.
+    increment_uses_count: "false",
+  });
+
+  const res = await fetch("https://api.gumroad.com/v2/licenses/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+
+  // Gumroad returns 404 on invalid keys. :contentReference[oaicite:3]{index=3}
+  if (!res.ok) {
+    const msg = res.status === 404 ? "Invalid license." : `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  const data = await res.json();
+
+  // Success payload contains `success: true`, `uses`, and `purchase` details.
+  // We also check refunded/chargebacked/cancelled/ended subscription flags. :contentReference[oaicite:4]{index=4}
+  if (!data.success) throw new Error("Invalid license.");
+  const p = data.purchase ?? {};
+  if (p.refunded || p.chargebacked || p.disputed) {
+    throw new Error("This purchase has been refunded or disputed.");
+  }
+  if (p.subscription_cancelled_at || p.subscription_ended_at || p.subscription_failed_at) {
+    throw new Error("This subscription is no longer active.");
+  }
+
+  // Return the bits you might want to cache
+  return {
+    licenseKey,
+    uses: data.uses,
+    email: p.email,
+    quantity: p.quantity,
+    productId: p.product_id,
+    saleId: p.sale_id,
+    recurrence: p.recurrence, // "monthly", "yearly", or null for one-time
+  };
+}
 
 export default function AccessCodeModal() {
   const [visible, setVisible] = useState(false);
@@ -9,20 +62,34 @@ export default function AccessCodeModal() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("draftscape-access-token");
-    if (!token) {
-      setVisible(true);
-    }
+    const token = localStorage.getItem(STORAGE_KEY);
+    if (!token) setVisible(true);
   }, []);
 
-  const validateCode = () => {
-    const isValid = VALID_CODES.includes(code.trim().toUpperCase());
+  const validateCode = async () => {
+    setError("");
 
-    if (isValid) {
-      localStorage.setItem("draftscape-access-token", code.trim());
+    try {
+      // 1) Verify with Gumroad
+      const result = await verifyGumroadLicense(code);
+
+      // 2) Cache a minimal activation token locally
+      //    (You can store more fields if you’d like.)
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          licenseKey: result.licenseKey,
+          email: result.email,
+          productId: result.productId,
+          saleId: result.saleId,
+          activatedAt: new Date().toISOString(),
+        })
+      );
+
+      // 3) Close modal
       setVisible(false);
-    } else {
-      setError("Invalid access code. Please check your Gumroad receipt.");
+    } catch (e: any) {
+      setError(e.message || "Could not verify license. Please check your Gumroad receipt.");
     }
   };
 
@@ -33,14 +100,14 @@ export default function AccessCodeModal() {
       <div style={modalStyle}>
         <h2 style={{ marginBottom: "12px" }}>🔒 Access Required</h2>
         <p style={{ marginBottom: "10px" }}>
-          To use Draftscape, please enter your access code below.
+          To use Ficweaver, please enter your free license key from Gumroad.
         </p>
 
         <input
           type="text"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder="Enter access code"
+          placeholder="Enter license key"
           style={inputStyle}
         />
 
@@ -51,14 +118,14 @@ export default function AccessCodeModal() {
         </button>
 
         <p style={{ marginTop: "16px", fontSize: "13px", color: "#666" }}>
-          You can get your access code by supporting this project on Gumroad —&nbsp;
+          Don’t have a key yet? Support the project on Gumroad —&nbsp;
           <a
-            href="https://your-gumroad-url.com" // 🔁 Replace with real link
+            href="https://your-gumroad-url.com"
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: "#766DA7", textDecoration: "underline" }}
           >
-            Pay-what-you-want (suggested: €5)
+            Pay‑what‑you‑want (suggested: €5-10)
           </a>
         </p>
       </div>
@@ -66,6 +133,7 @@ export default function AccessCodeModal() {
   );
 }
 
+// ————— styles (unchanged) —————
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   top: 0,
@@ -96,7 +164,7 @@ const inputStyle: React.CSSProperties = {
   border: "1px solid #ccc",
   marginBottom: "12px",
   fontSize: "15px",
-  boxSizing: "border-box", // Add this
+  boxSizing: "border-box",
 };
 
 const buttonStyle: React.CSSProperties = {
@@ -109,5 +177,5 @@ const buttonStyle: React.CSSProperties = {
   cursor: "pointer",
   fontSize: "15px",
   fontWeight: "bold",
-  boxSizing: "border-box", // Add this
+  boxSizing: "border-box",
 };

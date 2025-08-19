@@ -9,6 +9,7 @@ import type { NodeData } from "./context/storyStore/types";
 import AccessCodeModal from "./components/Payment/AccessCodeModal";
 import { ThemeProvider } from "./context/themeProvider/ThemeProvider";
 import ExportButton from "./components/Export/ExportButton";
+import TutorialManager from "./components/Tutorial/TutorialManager";
 
 export default function App() {
   const focusNodeRef = useRef<((nodeId?: string) => void) | null>(null);
@@ -46,6 +47,7 @@ export default function App() {
     <ThemeProvider>
       <div className="app">
         <AccessCodeModal />
+        {/* <TutorialManager autoOpenOnFirstVisit /> */}
 
         <Toolbar />
 

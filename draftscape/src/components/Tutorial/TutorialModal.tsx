@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { TutorialSlide } from "./slides";
-import { defaultSlides } from "./slides";
+import type { TutorialSlide } from "./Slides";
+import { defaultSlides } from "./Slides";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme } from "../../context/themeProvider/ThemeProvider";
 

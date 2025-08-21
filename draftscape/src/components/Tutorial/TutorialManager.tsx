@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import TutorialModal from "./TutorialModal";
 import TutorialLauncherButton from "./TutorialLauncherButton";
 import { useLocalStorage } from "./useLocalStorage";
-import { defaultSlides } from "./slides";
+import { defaultSlides } from "./Slides";
 
 const STORAGE_KEY = "draftscape.tutorialSeen.v1";
 

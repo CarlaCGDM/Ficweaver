@@ -120,7 +120,7 @@ export default function AccessCodeModal() {
         <p style={{ marginTop: "16px", fontSize: "13px", color: "#666" }}>
           Don’t have a key yet? Support the project on Gumroad —&nbsp;
           <a
-            href="https://your-gumroad-url.com"
+            href="https://squirrelcarla.gumroad.com/l/ficweaver"
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: "#766DA7", textDecoration: "underline" }}

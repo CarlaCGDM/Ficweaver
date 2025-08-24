@@ -190,3 +190,14 @@
   text-decoration: underline;
   color: var(--color-accent);
 }
+
+.toolbar-link {
+  color: var(--accent-color, #4a90e2);
+  text-decoration: underline;
+  font-weight: 500;
+  pointer-events: auto;
+}
+
+.toolbar-link:hover {
+  color: var(--accent-hover, #1c6cd5);
+}

@@ -23,6 +23,7 @@
   gap: 10px;
   box-shadow: var(--node-shadow);
   color: var(--color-text);
+  border: 1px solid var(--color-border);
 }
 
 .modal-form {
@@ -90,4 +91,25 @@
 
 .modal-toolbar button:hover {
   background: var(--color-panelAlt);
+}
+
+/* Make the Tiptap editor area taller by default */
+.rich-editor {
+  min-height: 220px;         /* adjust to taste */
+  padding: 8px 10px;         /* comfy typing */
+  line-height: 1.5;
+  background: var(--color-panel);
+  color: var(--color-text);
+  outline: none;             /* keep borders clean; toolbar wrapper already has a border */
+  
+}
+
+/* Optional: nicer paragraph spacing inside the editor */
+.rich-editor p {
+  margin: 0 0 0.75em;
+}
+
+/* Optional: visible focus ring without shifting layout */
+.rich-editor:focus {
+  box-shadow: 0 0 0 2px var(--color-border);
 }

@@ -36,7 +36,17 @@ export default function Toolbar() {
 
       {/* Center: Warning */}
       <div className="toolbar-warning">
-        ⚠️ Ficweaver is an experimental tool. Please&nbsp;<strong>save</strong>&nbsp;and&nbsp;<strong>export</strong>&nbsp;often to avoid losing your work.
+        ⚠️ Ficweaver is an experimental tool. Please&nbsp;
+        <strong>save</strong>&nbsp;and&nbsp;<strong>export</strong>&nbsp;often to avoid losing your work.
+        &nbsp;|&nbsp;
+        <a
+          href="https://discord.gg/8E86tEczXb"
+          target="_blank"
+          rel="noreferrer"
+          className="toolbar-link"
+        >
+        Experiencing issues? Join our tech support Discord server →
+        </a>
       </div>
 
       {/* Right controls */}

@@ -79,7 +79,7 @@ export default function NodeConnections({ story }: NodeConnectionsProps) {
         zIndex: 0,
       }}
     >
-      <g transform="translate(1000, 1000)">
+      <g transform="translate(10000, 10000)">
         {/* Intra-chapter connections (no cross-chapter chaining) */}
         {chapterChains.map(({ chain, color }) =>
           chain.map((node, idx) => {

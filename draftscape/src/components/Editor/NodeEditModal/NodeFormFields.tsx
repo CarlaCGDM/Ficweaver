@@ -170,7 +170,7 @@ export function NodeFormFields({
 
   const renderEditor = () =>
     editor && (
-      <div style={{ border: "1px solid #ccc", borderRadius: "6px", padding: "4px" }}>
+      <div style={{ border: "1px solid var(--color-border)", borderRadius: "6px", padding: "4px" }}>
         <NodeToolbar editor={editor} />
         <EditorContent editor={editor} />
       </div>
@@ -261,13 +261,13 @@ export function NodeFormFields({
 
         {/* Date Row */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            <label style={{ marginBottom: "4px", fontSize: "12px", fontWeight: 500 }}>Year*</label>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap:"3px" }}>
+            <label style={labelStyle}>Year*</label>
             <input
               type="number"
               style={{
                 padding: "6px 8px",
-                border: "1px solid #ccc",
+                border: "1px solid var(--color-border)",
                 borderRadius: "4px",
                 fontSize: "14px",
               }}
@@ -276,13 +276,13 @@ export function NodeFormFields({
               required
             />
           </div>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            <label style={{ marginBottom: "4px", fontSize: "12px", fontWeight: 500 }}>Month</label>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap:"3px" }}>
+            <label style={labelStyle}>Month</label>
             <input
               type="number"
               style={{
                 padding: "6px 8px",
-                border: "1px solid #ccc",
+                border: "1px solid var(--color-border)",
                 borderRadius: "4px",
                 fontSize: "14px",
               }}
@@ -292,13 +292,13 @@ export function NodeFormFields({
               max={12}
             />
           </div>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            <label style={{ marginBottom: "4px", fontSize: "12px", fontWeight: 500 }}>Day</label>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap:"3px" }}>
+            <label style={labelStyle}>Day</label>
             <input
               type="number"
               style={{
                 padding: "6px 8px",
-                border: "1px solid #ccc",
+                border: "1px solid var(--color-border)",
                 borderRadius: "4px",
                 fontSize: "14px",
               }}
@@ -311,8 +311,8 @@ export function NodeFormFields({
         </div>
 
         {/* Tags Section */}
-        <div style={{ marginBottom: "12px", position: "relative" }}>
-          <label style={{ display: "block", marginBottom: "4px", fontWeight: 500 }}>
+        <div style={{ marginBottom: "12px", position: "relative",  }}>
+          <label style={labelStyle}>
             Tags
           </label>
 
@@ -321,10 +321,11 @@ export function NodeFormFields({
               display: "flex",
               flexWrap: "wrap",
               alignItems: "center",
-              border: "1px solid #ccc",
+              border: "1px solid var(--color-border)",
               borderRadius: "6px",
               padding: "4px",
               background: "var(--color-panel)",
+              marginTop: "3px"
             }}
           >
             {tags.map((tag) => (
@@ -376,8 +377,7 @@ export function NodeFormFields({
                 position: "absolute",
                 top: "calc(100% + 4px)",
                 left: "0",
-                background: "#fff",
-                border: "1px solid #ccc",
+                background: "var(--color-panel)",
                 borderRadius: "4px",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                 zIndex: 10,

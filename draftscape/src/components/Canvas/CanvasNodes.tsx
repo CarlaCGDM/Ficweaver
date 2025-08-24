@@ -164,7 +164,7 @@ export default function CanvasNodes({
   };
 
   return (
-    <div style={{ transform: "translate(1000px, 1000px)" }}>
+    <div style={{ transform: "translate(10000px, 10000px)" }}>
       {story.order.map((chapterId, idx) =>
         renderNodeAndChildren(chapterId, chapterId, undefined, idx)
       )}

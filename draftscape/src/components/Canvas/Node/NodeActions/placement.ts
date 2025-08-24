@@ -47,7 +47,7 @@ export function placeBelowFlush(
     (alignXFromId ? story.nodeMap[alignXFromId]?.position.x : undefined) ??
     target.position.x;
 
-  const finalY = anchor.position.y + measured + 300;
+  const finalY = anchor.position.y + measured + 150;
 
   story.nodeMap[targetId] = {
     ...target,

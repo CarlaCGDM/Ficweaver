@@ -9,15 +9,15 @@ export default function Footer() {
 
       <div className="footer-center">
         <p>
-          <a href="https://github.com/your-github" target="_blank" rel="noopener noreferrer">
+          <a href="https://github.com/CarlaCGDM/Ficweaver" target="_blank" rel="noopener noreferrer">
             GitHub
           </a>
           {" | "}
-          <a href="https://www.linkedin.com/in/your-linkedin" target="_blank" rel="noopener noreferrer">
+          <a href="https://www.linkedin.com/in/nadina-carla-cardillo-garreta/" target="_blank" rel="noopener noreferrer">
             LinkedIn
           </a>
           {" | "}
-          <a href="mailto:youremail@example.com">
+          <a href="mailto:nadinaccg@gmail.com">
             Contact
           </a>
         </p>
@@ -26,9 +26,9 @@ export default function Footer() {
       <div className="footer-right">
         <button
           className="donate-button"
-          onClick={() => window.open("https://www.buymeacoffee.com/yourpage", "_blank")}
+          onClick={() => window.open("https://squirrelcarla.gumroad.com/l/support", "_blank")}
         >
-          ☕ Donate
+          ☕ Support development
         </button>
       </div>
     </footer>

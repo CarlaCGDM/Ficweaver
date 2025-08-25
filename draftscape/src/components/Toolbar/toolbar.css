@@ -37,7 +37,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 0.75vw;
   font-weight: 500;
   color: var(--color-warningText);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);

@@ -60,6 +60,7 @@ export interface TextNode extends BaseNode {
 export interface PictureNode extends BaseNode {
   type: "picture";
   description: string;
+  url?: string;
 }
 
 export interface AnnotationNode extends BaseNode {
@@ -122,7 +123,7 @@ export interface StoryState {
   // ==============================
   // Scene CRUD
   // ==============================
-  createScene: (parentChapterId: string, title: string, insertAfterId?: string,  options?: { atStart?: boolean }) => void;
+  createScene: (parentChapterId: string, title: string, insertAfterId?: string, options?: { atStart?: boolean }) => void;
   updateScene: (id: string, updates: Partial<SceneNode>) => void;
   deleteScene: (id: string) => void;
 
@@ -157,12 +158,12 @@ export interface StoryState {
   // ==============================
   // Re-parenting / moving
   // ==============================
-  reorderChapters: (orderedIds: string[]) => void; 
+  reorderChapters: (orderedIds: string[]) => void;
   moveNode: (
     nodeId: string,
     newParentId: string | null,
     insertAfterId?: string | null,
-    options?: { atStart?: boolean }   
+    options?: { atStart?: boolean }
   ) => void;
 }
 

@@ -41,6 +41,7 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [annotationText, setAnnotationText] = useState("");
   const [pictureDescription, setPictureDescription] = useState("");
+  const [pictureUrl, setPictureUrl] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [eventYear, setEventYear] = useState("");
   const [eventMonth, setEventMonth] = useState("");
@@ -76,6 +77,7 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
       if (textEditor) textEditor.commands.setContent(node.text || "");
     } else if (node.type === "picture") {
       setPictureDescription(node.description || "");
+      setPictureUrl(node.url ?? "");              // ⬅️ hydrate url
       const storedImage = imageMap[node.id];
       setImagePreview(storedImage || null);
     } else if (node.type === "event") {
@@ -118,7 +120,10 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
         text: textEditor ? textEditor.getHTML() : "",
       });
     } else if (node.type === "picture") {
-      updateNode(node.id, { description: pictureDescription });
+      updateNode(node.id, {
+        description: pictureDescription,
+        url: pictureUrl || undefined,
+      });
     } else if (node.type === "event") {
       updateNode(node.id, {
         year: eventYear ? parseInt(eventYear) : undefined,
@@ -183,6 +188,7 @@ export default function NodeEditModal({ node, onClose }: NodeEditModalProps) {
             eventMonth={eventMonth} setEventMonth={setEventMonth}
             eventDay={eventDay} setEventDay={setEventDay}
             eventDescription={eventDescription} setEventDescription={setEventDescription}
+            pictureUrl={pictureUrl} setPictureUrl={setPictureUrl}
           />
         </div>
 

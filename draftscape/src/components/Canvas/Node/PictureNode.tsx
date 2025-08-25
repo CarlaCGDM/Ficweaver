@@ -4,6 +4,7 @@ import { baseNodeStyle } from "./nodeStyles";
 import NodeActions from "./NodeActions/NodeActions";
 import { useImageStore } from "../../../context/imageStore/imageStore";
 import { useEffect, useState } from "react";
+import { ExternalLink } from "lucide-react"; // ⬅️ import the icon
 
 export default function PictureNode({
   node,
@@ -18,7 +19,6 @@ export default function PictureNode({
   const pictureNode = node as PictureNodeType;
   const isFocused = focusedNodeId === node.id;
 
-  // Node base style now uses theme var for the accent border
   const baseStyle = baseNodeStyle(isInDragGroup, "var(--chapter-color-2)");
 
   const { imageMap } = useImageStore();
@@ -75,6 +75,7 @@ export default function PictureNode({
           justifyContent: "center",
           alignItems: "center",
           overflow: "hidden",
+          position: "relative", // ⬅️ make it relative so button can be absolute
         }}
       >
         {imageURL ? (
@@ -91,6 +92,30 @@ export default function PictureNode({
           <span style={{ fontSize: "12px", color: "var(--color-mutedText)" }}>
             No Image
           </span>
+        )}
+
+        {/* External link button */}
+        {pictureNode.url && (
+          <a
+            href={pictureNode.url}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              position: "absolute",
+              top: "4px",
+              right: "4px",
+              color: "var(--color-text)",
+              opacity: 0.5,
+              transition: "opacity 0.2s",
+              pointerEvents: "auto",
+              zIndex: 1000,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.5")}
+            title="Open source link"
+          >
+            <ExternalLink size={20} />
+          </a>
         )}
       </div>
 

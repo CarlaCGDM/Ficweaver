@@ -26,6 +26,8 @@ interface NodeFormFieldsProps {
   setPictureDescription: (val: string) => void;
   handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   imagePreview: string | null;
+  pictureUrl: string;
+  setPictureUrl: (val: string) => void;
   eventYear: string;
   setEventYear: (val: string) => void;
   eventMonth: string;
@@ -97,6 +99,8 @@ export function NodeFormFields({
   setPictureDescription,
   handleImageUpload,
   imagePreview,
+  pictureUrl,
+  setPictureUrl,
   eventYear,
   setEventYear,
   eventMonth,
@@ -238,6 +242,26 @@ export function NodeFormFields({
           />
         </div>
         <div style={formGroupStyle}>
+        <label style={labelStyle}>Image Source URL (optional)</label>
+        <input
+          type="url"
+          style={inputStyle}
+          placeholder="https://example.com/original-image"
+          value={pictureUrl}
+          onChange={(e) => setPictureUrl(e.target.value)}
+        />
+        {pictureUrl && (
+          <a
+            href={pictureUrl}
+            target="_blank"
+            rel="noreferrer"
+            style={{ fontSize: "12px", marginTop: "4px" }}
+          >
+            Open source link →
+          </a>
+        )}
+      </div>
+        <div style={formGroupStyle}>
           <label style={labelStyle}>Upload Image</label>
           <input type="file" accept="image/*" onChange={handleImageUpload} />
         </div>
@@ -261,7 +285,7 @@ export function NodeFormFields({
 
         {/* Date Row */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap:"3px" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
             <label style={labelStyle}>Year*</label>
             <input
               type="number"
@@ -276,7 +300,7 @@ export function NodeFormFields({
               required
             />
           </div>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap:"3px" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
             <label style={labelStyle}>Month</label>
             <input
               type="number"
@@ -292,7 +316,7 @@ export function NodeFormFields({
               max={12}
             />
           </div>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap:"3px" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
             <label style={labelStyle}>Day</label>
             <input
               type="number"
@@ -311,7 +335,7 @@ export function NodeFormFields({
         </div>
 
         {/* Tags Section */}
-        <div style={{ marginBottom: "12px", position: "relative",  }}>
+        <div style={{ marginBottom: "12px", position: "relative", }}>
           <label style={labelStyle}>
             Tags
           </label>

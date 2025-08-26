@@ -54,7 +54,7 @@
 }
 
 .toolbar-btn {
-  background: transparent;
+  background: var(--color-panelAlt);
   border: none;
   cursor: pointer;
   display: flex;
@@ -192,7 +192,7 @@
 }
 
 .toolbar-link {
-  color: var(--accent-color, #4a90e2);
+  color: var(--color-accent, #4a90e2);
   text-decoration: underline;
   font-weight: 500;
   pointer-events: auto;
@@ -200,4 +200,8 @@
 
 .toolbar-link:hover {
   color: var(--accent-hover, #1c6cd5);
+}
+
+.fullscreen-trigger {
+  background: transparent;
 }

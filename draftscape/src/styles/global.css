@@ -15,6 +15,8 @@
 
   --font-ui: Fredoka, sans-serif;
   --font-display: Fredoka, sans-serif;
+  --font-ui-scale: 1;
+  --font-display-scale: 1;
 
   /* Chapter palette placeholders */
   --chapter-color-1: #766DA7;
@@ -74,6 +76,19 @@ h6 {
   color: var(--color-text);
   font-family: var(--font-ui);
 }
+
+p {
+    font-size: calc(16px * var(--font-ui-scale));
+}
+
+small {
+    font-size: calc(14px * var(--font-ui-scale));
+}
+
+h1 { font-size: calc(2.0rem * var(--font-display-scale)); }
+h2 { font-size: calc(1.6rem * var(--font-display-scale)); }
+h3 { font-size: calc(1.3rem * var(--font-display-scale)); }
+h4 { font-size: calc(1.2rem * var(--font-display-scale)); }
 
 a {
   color: var(--color-accent);

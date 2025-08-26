@@ -148,6 +148,7 @@ export default function ChapterNode(
           outlineOffset: hilite ? 2 : undefined,
           cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
           filter: hilite ? "saturate(1.5)" : undefined,
+          
         }}
       >
         {/* Subtle color wash */}
@@ -173,15 +174,15 @@ export default function ChapterNode(
             zIndex: 1,
           }}
         >
-          📘 Chapter {chapterIndex !== undefined ? chapterIndex + 1 : "?"}
+          <h2>📘 Chapter {chapterIndex !== undefined ? chapterIndex + 1 : "?"}&nbsp;:&nbsp;{chapterNode.title}</h2>
         </div>
 
-        <div style={{ padding: "14px 8px", position: "relative", zIndex: 1 }}>
-          <div style={{ fontWeight: "bold", marginBottom: "4px" }}>{chapterNode.title}</div>
+        <div style={{ padding: "0vh 1.5vh", position: "relative", zIndex: 1 }}>
+          
           {chapterNode.description && (
-            <div style={{ fontSize: "12px", color: "var(--color-text)" }}>
+            <p style={{ color: "var(--color-text)",  }}>
               {chapterNode.description}
-            </div>
+            </p>
           )}
         </div>
       </div>

@@ -188,24 +188,24 @@ export default function SceneNode(
 
         <div
           style={{
-            ...headerStyle("transparent"),
+            ...headerStyle(softTint(resolvedChapterColor, 30)),
             position: "relative",
             zIndex: 1,
             color: "var(--color-text)",
           }}
         >
-          🎬 Chapter {chIndexToShow !== undefined ? chIndexToShow + 1 : "?"}, Scene{" "}
-          {scIndexToShow !== undefined ? scIndexToShow + 1 : "?"}
+          <h3>🎬 Chapter {chIndexToShow !== undefined ? chIndexToShow + 1 : "?"}, Scene{" "}
+          {scIndexToShow !== undefined ? scIndexToShow + 1 : "?"}&nbsp;:&nbsp; 
+            {sceneNode.title}
+          </h3>
         </div>
 
-        <div style={{ padding: "14px 8px", position: "relative", zIndex: 1 }}>
-          <div style={{ fontWeight: "bold", marginBottom: "4px", color: "var(--color-text)" }}>
-            {sceneNode.title}
-          </div>
+        <div style={{ padding: "0vh 1.5vh", position: "relative", zIndex: 1 }}>
+          
           {sceneNode.description && (
-            <div style={{ fontSize: "12px", color: "var(--color-text)" }}>
+            <p style={{ color: "var(--color-text)" }}>
               {sceneNode.description}
-            </div>
+            </p>
           )}
         </div>
       </div>

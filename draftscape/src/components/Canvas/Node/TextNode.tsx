@@ -187,7 +187,6 @@ export default function TextNode(
           borderRadius: "6px",
           top: node.position.y,
           left: node.position.x,
-          padding: "8px",
           transition: "box-shadow 0.25s ease",
           zIndex: 100,
           border: "1px solid var(--color-border)",
@@ -196,12 +195,13 @@ export default function TextNode(
           outlineOffset: hilite ? 2 : undefined,
           cursor: props.isConnectMode ? (hilite ? "copy" : "not-allowed") : (isDragging ? "grabbing" : "grab"),
           filter: hilite ? "saturate(1.5)" : undefined,
+          padding: "1vh"
         }}
       >
         <NodeActions nodeId={node.id} onEditNode={onEditNode} />
 
         {/* Chapter Header (solid) */}
-        <div
+        {/* <div
           style={{
             ...miniHeaderStyle(resolvedChapterColor),
             background: resolvedChapterColor,
@@ -209,36 +209,35 @@ export default function TextNode(
           }}
         >
           📄 Chapter: {parentChapter?.title || "(Unknown)"}
-        </div>
+        </div> */}
 
         {/* Scene Header (soft tint) */}
-        <div
+        {/* <div
           style={{
             ...miniHeaderStyle(resolvedChapterColor),
             background: softTint(resolvedChapterColor, 30),
             color: "var(--color-text)",
           }}
         >
-          Scene: {parentScene?.title || "(Unknown)"}
-        </div>
+        🎬 Scene: {parentScene?.title || "(Unknown)"}
+        </div> */}
 
         {/* Summary */}
         {textNode.summary && (
-          <div
+          <h4
             style={{
-              fontWeight: "bold",
-              marginTop: "8px",
-              marginBottom: "4px",
-              color: "var(--color-text)",
+              ...miniHeaderStyle(resolvedChapterColor),
+              background: softTint(resolvedChapterColor, 30),
+              margin: "0",
             }}
           >
-            {textNode.summary}
-          </div>
+            📄 {textNode.summary}
+          </h4>
         )}
 
         {/* Rich text */}
         <div
-          style={{ fontSize: "12px", marginBottom: "4px", lineHeight: "1.4", color: "var(--color-text)" }}
+          style={{ lineHeight: "1.4", color: "var(--color-text)" }}
           dangerouslySetInnerHTML={{
             __html: textNode.text || "<em>(Empty Node)</em>",
           }}
@@ -246,21 +245,26 @@ export default function TextNode(
 
         {/* Tags */}
         {textNode.tags && textNode.tags.length > 0 && (
-          <div style={{ marginTop: "4px", fontSize: "10px", color: "var(--color-mutedText)" }}>
-            Tags:{" "}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",     // ⬅️ allow wrapping
+              gap: "6px",           // ⬅️ horizontal & vertical spacing
+              color: "var(--color-mutedText)",
+            }}
+          >
             {textNode.tags.map((tag, idx) => (
-              <span
+              <small
                 key={idx}
                 style={{
                   background: "var(--color-panelAlt)",
-                  padding: "2px 6px",
-                  marginRight: "4px",
+                  color: "var(--color-text)",
+                  padding: "2px 8px",
                   borderRadius: "4px",
-                  fontSize: "10px",
                 }}
               >
                 {tag}
-              </span>
+              </small>
             ))}
           </div>
         )}

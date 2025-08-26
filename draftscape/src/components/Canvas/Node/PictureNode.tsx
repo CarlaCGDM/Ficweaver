@@ -104,31 +104,38 @@ export default function PictureNode({
               position: "absolute",
               top: "4px",
               right: "4px",
+              width: "28px",               // ⬅️ fixed square size
+              height: "28px",
+              display: "flex",             // ⬅️ center the icon
+              alignItems: "center",
+              justifyContent: "center",
               color: "var(--color-text)",
-              opacity: 0.5,
+              background: "var(--color-panel)",
+              borderRadius: "4px",         // optional: rounded square
+              opacity: 0.75,
               transition: "opacity 0.2s",
               pointerEvents: "auto",
               zIndex: 1000,
             }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.5")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.75")}
             title="Open source link"
           >
-            <ExternalLink size={20} />
+            <ExternalLink size={18} />
           </a>
         )}
+
       </div>
 
       {/* Description Below */}
-      <div
+      <small
         style={{
-          fontSize: "11px",
           textAlign: "center",
           color: "var(--color-text)",
         }}
       >
         {pictureNode.description || "Picture description"}
-      </div>
+      </small>
     </div>
   );
 }

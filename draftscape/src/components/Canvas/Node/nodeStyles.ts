@@ -23,7 +23,7 @@ export const headerStyle = (color: string): CSSProperties => ({
   color: "white",
   fontSize: "16px",
   fontWeight: "bold",
-  padding: "10px 6px",
+  padding: "1px 6px",
   borderTopLeftRadius: "5px",
   borderTopRightRadius: "5px",
 });
@@ -32,8 +32,6 @@ export const headerStyle = (color: string): CSSProperties => ({
 export const miniHeaderStyle = (color: string): CSSProperties => ({
   background: color,
   color: "var(--color-text)",
-  fontSize: "14px",
-  padding: "6px 4px",
+  padding: "2vh 1.5vh",
   borderRadius: "3px",
-  marginBottom: "4px",
 });

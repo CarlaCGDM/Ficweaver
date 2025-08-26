@@ -45,6 +45,8 @@ function applyAttributes(mode: Mode, theme: ThemeConfig) {
   root.style.setProperty("--font-ui", theme.fonts.ui);
   root.style.setProperty("--font-display", theme.fonts.display);
   if (theme.fonts.mono) root.style.setProperty("--font-mono", theme.fonts.mono);
+  document.documentElement.style.setProperty("--font-ui-scale", String(theme.fonts.scale?.ui ?? 1));
+  document.documentElement.style.setProperty("--font-display-scale", String(theme.fonts.scale?.display ?? 1));
 
   root.classList.toggle("dark", mode === "dark");
 }

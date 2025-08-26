@@ -25,6 +25,7 @@ export type ThemeConfig = {
     ui: string;
     display: string;
     mono?: string;
+    scale?: { ui?: number; display?: number }; // ⬅️ optional per-font scale
   };
 };
 
@@ -206,11 +207,53 @@ export const THEMES: Record<string, ThemeConfig> = {
       display: "Caveat, Patrick Hand, cursive",
     },
   },
+ gothic: {
+  id: "gothic",
+  label: "Gothic",
+  colors: {
+    light: {
+      bg: "#E5E5E5",        // pale stone gray
+      panel: "#D9D9D9",     // lighter carved stone
+      panelAlt: "#C4C4C4",  // mid-gray for chips/stripes
+      text: "#111111",      // ink black
+      border: "#959494ff",    // heavy ink line
+      accent: "#5d1818ff",    // blood crimson
+      accentText: "#FFFFFF",
+      warningBg: "#cebbbbff", // pale red-gray alert
+      warningBorder: "#655050ff",
+      warningText: "#3A1717",
+      nodeConnection: "#555555", // iron-gray line
+    },
+    dark: {
+      bg: "#131313ff",        // near-black stone
+      panel: "#1A1A1A",     // deep carved recess
+      panelAlt: "#2A2A2A",  // slightly lighter gray
+      text: "#E5E5E5",      // chalk white
+      border: "#0f0f0fff",    // iron-gray
+      accent: "#fa5656ff",    // vivid crimson
+      accentText: "#0E0E0E",
+      warningBg: "#60323dff", // claret shadow
+      warningBorder: "#6A2B2B",
+      warningText: "#be7d7dff",
+      nodeConnection: "#777777", // stone-gray
+    },
+  },
+  chapterColors: {
+    // Gothic chapter palette: ink, stone, ivy, iron, wine
+    light: ["#763232ff", "#555555", "#9b9b9bff",  "#4A4A4A", "#8B6B52"],
+    dark:  ["#5d1818ff", "#363636ff", "#535353ff",  "#5c6166ff", "#635548ff"],
+  },
+  stickerBasePath: {
+    light: "/stickers/gothic/light",
+    dark: "/stickers/gothic/dark",
+  },
+  fonts: {
+    ui: "EB Garamond, Georgia, serif",
+    display: "UnifrakturCook, IM Fell English, EB Garamond, serif",
+    mono: "IBM Plex Mono, ui-monospace, Menlo, monospace",
+    scale: { ui: 1.2, display: 1 },
+  },
+}
 
 
-
-
-
-
-  // 🔁 Add cats/medieval/y2k/noir here by giving each a `panelAlt`.
 };
